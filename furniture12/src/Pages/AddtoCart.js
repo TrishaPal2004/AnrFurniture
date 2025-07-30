@@ -35,7 +35,7 @@ const AddtoCart = () => {
 
     setFetchingCart(true);
     try {
-      const response = await fetch('http://localhost:5000/api/cart/items', {
+      const response = await fetch('https://anrfurniture-2.onrender.com/api/cart/items', {
         headers: getAuthHeaders()
       });
 
@@ -62,7 +62,7 @@ const AddtoCart = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/cart/update/${productId}`, {
+      const response = await fetch(`https://anrfurniture-2.onrender.com/api/cart/update/${productId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ quantity: newQuantity })
@@ -92,7 +92,7 @@ const AddtoCart = () => {
   const removeFromCart = async (productId) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/cart/remove/${productId}`, {
+      const response = await fetch(`https://anrfurniture-2.onrender.com/api/cart/remove/${productId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -181,7 +181,7 @@ const AddtoCart = () => {
         paymentMethod: selectedPaymentMethod
       };
 
-      const response = await fetch('http://localhost:5000/api/order/create', {
+      const response = await fetch('https://anrfurniture-2.onrender.com/api/order/create', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(orderData)
@@ -207,7 +207,7 @@ const AddtoCart = () => {
 
       // Clear cart after successful order - you might want to call a clear cart API endpoint
       try {
-        await fetch('http://localhost:5000/api/cart/clear', {
+        await fetch('https://anrfurniture-2.onrender.com/api/cart/clear', {
           method: 'DELETE',
           headers: getAuthHeaders()
         });

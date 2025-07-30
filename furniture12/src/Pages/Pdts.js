@@ -21,8 +21,8 @@ const Pdts = () => {
     
     try {
       const url = categoryParam === "New Arrival" 
-        ? "http://localhost:5000/api/pdt/all"
-        : `http://localhost:5000/api/pdt/${categoryParam}`;
+        ? "https://anrfurniture-2.onrender.com/api/pdt/all"
+        : `https://anrfurniture-2.onrender.com/api/pdt/${categoryParam}`;
       
       const response = await fetch(url);
       
@@ -44,7 +44,7 @@ const Pdts = () => {
   // Fetch cart items to check which products are already in cart
   const fetchCartItems = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/cart/items", {
+      const response = await fetch("https://anrfurniture-2.onrender.com/api/cart/items", {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}` // Add auth token
         }
@@ -73,7 +73,7 @@ const Pdts = () => {
 const token = localStorage.getItem("token");
   const handleCheckCart = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/cart/check");
+      const response = await fetch("https://anrfurniture-2.onrender.com/api/cart/check");
       if (!response.ok) {
         throw new Error(`Failed to check cart: ${response.status}`);
       }
@@ -96,7 +96,7 @@ console.log(typeof pdt._id);
     const token = localStorage.getItem("token");
     console.log("Token:", token);
     try {
-      const response = await fetch("http://localhost:5000/api/user/${user._id}/cart", {
+      const response = await fetch("https://anrfurniture-2.onrender.com/api/user/${user._id}/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

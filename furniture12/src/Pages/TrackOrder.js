@@ -8,7 +8,7 @@ const TrackOrder = () => {
   // Fetch orders when component mounts
   const handleFetch = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/order/track", {
+      const response = await fetch("https://anrfurniture-2.onrender.com/api/order/track", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -22,7 +22,7 @@ const HeroAdminPanel = () => {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/hero')
+    fetch('https://anrfurniture-2.onrender.com/api/hero')
       .then(res => {
         const contentType = res.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
@@ -40,7 +40,7 @@ const HeroAdminPanel = () => {
 
   const handleSave = (key) => {
     console.log(user);
-    fetch(`http://localhost:5000/api/hero/${key}`, {
+    fetch(`https://anrfurniture-2.onrender.com/api/hero/${key}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

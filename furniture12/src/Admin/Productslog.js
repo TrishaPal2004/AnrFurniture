@@ -6,7 +6,7 @@ const Productslog = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/pdt/all', {
+      const res = await fetch('https://anrfurniture-2.onrender.com/api/pdt/all', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -20,7 +20,7 @@ const Productslog = () => {
 
   const deleteProduct = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/pdt/${id}`, {
+      await fetch(`https://anrfurniture-2.onrender.com/api/pdt/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -37,7 +37,7 @@ const Productslog = () => {
     const newQty = prompt("Enter new quantity:");
     const newPrice = prompt("Enter new price");
     try {
-      const res = await fetch(`http://localhost:5000/api/pdt/${id}`, {
+      const res = await fetch(`https://anrfurniture-2.onrender.com/api/pdt/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

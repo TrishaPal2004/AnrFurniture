@@ -8,7 +8,7 @@ const Signup = () => {
 const {signup}= useAuth();
   const signupReq = async ({ name, email, phoneno, password }) => {
     
-    const response = await fetch("http://localhost:5000/api/user/signup", {
+    const response = await fetch("https://anrfurniture-2.onrender.com/api/user/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

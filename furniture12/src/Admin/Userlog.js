@@ -9,7 +9,7 @@ const Userlog = () => {
     const fetchUsers = async () => {
       console.log("hi");
       try {
-        const response = await fetch('http://localhost:5000/api/user/all',{
+        const response = await fetch('https://anrfurniture-2.onrender.com/api/user/all',{
           method:'POST',
           headers:{
          'Content-Type': 'application/json',

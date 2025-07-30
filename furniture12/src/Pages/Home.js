@@ -11,7 +11,7 @@ const Home = () => {
   const {isLoggedIn,user,logout}=useAuth();
   useEffect(() => {
     // Fetch all hero sections on load - KEEPING YOUR ORIGINAL API CALL
-    fetch("http://localhost:5000/api/hero")
+    fetch("https://anrfurniture-2.onrender.com/api/hero")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch hero sections");
         return res.json();

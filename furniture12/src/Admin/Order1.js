@@ -19,7 +19,7 @@ const Order1 = () => {
   const [error, setError] = useState(null);
 
   // API configuration
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://anrfurniture-2.onrender.com/api';
 
   // Fetch orders from your backend
   const fetchOrders = useCallback(async () => {

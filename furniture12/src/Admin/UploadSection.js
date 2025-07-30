@@ -129,7 +129,7 @@ const UploadSection = () => {
 
     try {
       console.log("Sending request to API...");
-      const response = await fetch("http://localhost:5000/api/pdt", {
+      const response = await fetch("https://anrfurniture-2.onrender.com/api/pdt", {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...pdtData, price: Number(price),quantity:Number(quantity) }),

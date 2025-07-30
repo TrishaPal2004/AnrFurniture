@@ -12,7 +12,7 @@ const Pdtzoom = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/pdt/hi/${id}`);
+        const res = await fetch(`https://anrfurniture-2.onrender.com/api/pdt/hi/${id}`);
         const data = await res.json();
         setProduct(data);
         setCurrentImage(data?.images?.[0]);
