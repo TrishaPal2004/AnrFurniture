@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 55vh;
+  height: 5.5vh;
+  border: 2px solid gold;
+  border-radius: 50px;
+  background:transparent;
+  padding: 0 25px;
+  justify-content: space-between;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: gold;
+  font-size: 16px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  color: gold;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.container-fit{
+ backgroundColor:"black";
+ width:"500vw";
+  overflow-x:hidden;
+}
