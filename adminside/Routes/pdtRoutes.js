@@ -14,9 +14,40 @@ router.get('/all', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
+
+// routes/products.js
+router.get('/q', async (req, res) => {
+  try {
+    const { q } = req.query;
+    console.log("hi");
+    if (!q) {
+      return res.json({ products: [] });
+    }
+
+    const products = await PdtSection.find({
+      $or: [
+        { name: { $regex: q, $options: 'i' } },
+        { category: { $regex: q, $options: 'i' } },
+        { description: { $regex: q, $options: 'i' } },
+        { price: { $regex: q, $options: 'i' } },
+        { material: { $regex: q, $options: 'i' } } ,
+         {size: {$regex: q, $options: 'i' } }
+      ]
+    })
+    .select('name category price image description')
+    .limit(10)
+    .lean();
+
+    res.json({ products });
+  } catch (error) {
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // GET one product by ID
 router.get('/:category', async (req, res) => {
   try {
+    console.log("2nd")
     console.log("Fetching products for category:", req.params.category);
     const product = await PdtSection.find({ category: req.params.category });
     console.log(product);
@@ -92,8 +123,6 @@ router.delete('/:id', async (req, res) => {
 
 
 
-
-//update pdt quantity on being delivered
 
 
 

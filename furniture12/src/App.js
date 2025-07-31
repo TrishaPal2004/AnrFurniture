@@ -14,7 +14,7 @@ import Navbar from './Pages/Navbar.js';
 import Order1 from './Admin/Order1.js';
 import TrackOrder from './Pages/TrackOrder.js';
 import Productslog from './Admin/Productslog.js';
-
+import Searchbar from './Pages/Searchbar.js'
 const App = () => {
   return (
     <AuthProvider>
@@ -32,6 +32,7 @@ const App = () => {
             <Route path="/order" element={<Order1 />} />
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/pdtlog" element={<Productslog/>}/>
+            <Route path="/search" element={<Searchbar/>}/>
           </Routes>
         </BrowserRouter>
     
