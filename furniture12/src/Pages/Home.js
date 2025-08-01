@@ -251,12 +251,14 @@ const Home = () => {
           marginTop: "5vh",
           justifyContent: "space-between",
         }}>
-          <div className="custom-search-bar">
+          <button onClick={()=>navigate("/search")}>
+          <div className="custom-search-bar" >
             <input type="text" placeholder="Search..." className="search-input" />
-            <button className="search-icon" style={{ background: "transparent" }}>
+            <button className="search-icon" style={{ background: "transparent" }} >
               <Search size={20} style={{ background: "transparent" }} />
             </button>
           </div>
+          </button>
           <div style={{ display: "flex", alignItems: "center", gap: "3vw", marginLeft: "4vw", color: "white", width: "100%", fontSize: "1.2rem" }}>
             <button style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>navigate('/track')}>Track Order</button>
             <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }}>Bulk Orders</span>

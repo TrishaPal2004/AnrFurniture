@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, ShoppingBag, X, Loader2 } from 'lucide-react';
+import { Search, ShoppingBag, X, Loader2, Clock, TrendingUp } from 'lucide-react';
 
-const DynamicProductSearch = () => {
+const BeautifulProductSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Debounce function to avoid too many API calls
   const debounce = (func, delay) => {
     let timeoutId;
     return (...args) => {
@@ -17,36 +17,17 @@ const DynamicProductSearch = () => {
     };
   };
 
-  // Function to call your backend API
   const searchProducts = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
       setShowResults(false);
       return;
     }
-
     setIsLoading(true);
     setShowResults(true);
-
     try {
-      console.log('Searching for:', query);
-      const response = await fetch(`https://anrfurniture-2.onrender.com/api/pdt/q?q=${encodeURIComponent(query)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Backend error:', errorText);
-        throw new Error(`Search failed: ${response.status} ${errorText}`);
-      }
-
+      const response = await fetch(`https://anrfurniture-2.onrender.com/api/pdt/q?q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      console.log('Search results:', data);
       setSearchResults(data.products || []);
     } catch (error) {
       console.error('Search error:', error);
@@ -56,182 +37,107 @@ const DynamicProductSearch = () => {
     }
   };
 
+  const debouncedSearch = useCallback(debounce(searchProducts, 300), []);
 
-
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query) => searchProducts(query), 300),
-    []
-  );
-
-  // Handle search input change
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     debouncedSearch(value);
   };
 
-  // Handle product selection
   const handleProductSelect = (product) => {
-    // Add to recent searches
     const newRecent = [product.name, ...recentSearches.filter(s => s !== product.name)].slice(0, 5);
     setRecentSearches(newRecent);
-    
-    // Clear search
-    setSearchTerm('');
-    setShowResults(false);
-    
-    // Navigate to product page or handle selection
     console.log('Selected product:', product);
-    // window.location.href = `/product/${product._id}`;
+    window.location.href = `/zoom/${product._id}`;
   };
 
-  // Clear search
-  const clearSearch = () => {
-    setSearchTerm('');
-    setSearchResults([]);
-    setShowResults(false);
-  };
+  const clearSearch = () => setSearchTerm('');
 
-  // Handle clicking outside to close results
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.search-container')) {
-        setShowResults(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const trendingSearches = ['Sofa', 'Dining Table', 'Bed', 'Chair', 'Wardrobe'];
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4">
-      <div className="search-container relative">
-        {/* Search Input */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+    <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '40px' }}>
+      <div className="search-container" style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', top: '-4px', bottom: '-4px', left: '-4px', right: '-4px', background: 'linear-gradient(to right, #9333ea, #3b82f6, #14b8a6)', borderRadius: '16px', filter: 'blur(8px)', opacity: isFocused ? 1 : 0, transition: 'opacity 1s' }}></div>
+          <div style={{ position: 'relative', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '20px 24px' }}>
+              <div>
+                <Search style={{ height: '28px', width: '28px', color: isFocused ? '#3b82f6' : '#9ca3af', transition: 'color 0.3s' }} />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onFocus={() => {
+                  setIsFocused(true);
+                  if (searchTerm) setShowResults(true);
+                }}
+                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                placeholder="Search for furniture, decor, and more..."
+                style={{ flex: 1, marginLeft: '16px', fontSize: '20px', backgroundColor: 'transparent', border: 'none', outline: 'none', color: '#111827', fontWeight: '500' }}
+              />
+              {searchTerm && (
+                <button onClick={clearSearch} style={{ padding: '8px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '9999px' }}>
+                  <X style={{ height: '20px', width: '20px' }} />
+                </button>
+              )}
+            </div>
           </div>
-          
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onFocus={() => searchTerm && setShowResults(true)}
-            placeholder="Search for products..."
-            className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-          />
-          
-          {searchTerm && (
-            <button
-              onClick={clearSearch}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
         </div>
 
-        {/* Search Results Dropdown */}
         {showResults && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '12px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', boxShadow: '0 16px 48px rgba(0,0,0,0.1)', zIndex: 50, maxHeight: '32rem', overflow: 'hidden', backdropFilter: 'blur(4px)' }}>
             {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="ml-2 text-gray-600">Searching...</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+                <div style={{ position: 'relative' }}>
+                  <Loader2 style={{ height: '32px', width: '32px', animation: 'spin 1s linear infinite', color: '#3b82f6' }} />
+                </div>
+                <span style={{ marginLeft: '12px', fontSize: '20px', color: '#6b7280', fontWeight: 500 }}>Searching...</span>
               </div>
             ) : searchResults.length > 0 ? (
-              <div className="py-2">
-                {searchResults.map((product) => (
-                  <div
-                    key={product._id}
-                    onClick={() => handleProductSelect(product)}
-                    className="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+              <div style={{ padding: '16px' }}>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', paddingBottom: '12px', borderBottom: '1px solid #f3f4f6' }}>
+                  Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', maxHeight: '24rem', overflowY: 'auto', marginTop: '16px' }}>
+                  {searchResults.map(product => (
+                    <div key={product._id} onClick={() => handleProductSelect(product)} style={{ cursor: 'pointer', padding: '12px', border: '1px solid #f3f4f6', borderRadius: '12px', background: '#f9fafb', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <img
-                        src={product.images?.[0] || '/api/placeholder/48/48'}
+                        src={product.images?.[0] || '/api/placeholder/64/64'}
                         alt={product.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = '/api/placeholder/48/48';
-                        }}
+                        style={{ width: '160px', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }}
+                        onError={(e) => (e.target.src = '/api/placeholder/64/64')}
                       />
+                      <p style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '4px', textAlign: 'center' }}>{product.name}</p>
+                      <p style={{ fontSize: '14px', color: '#6b7280', textAlign: 'center' }}>{product.category} • {product.material}</p>
+                      {product.size && <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>Size: {product.size}</p>}
+                      <p style={{ marginTop: '8px', fontSize: '18px', fontWeight: 'bold', background: 'linear-gradient(to right, #3b82f6, #9333ea)', WebkitBackgroundClip: 'text', color: 'transparent' }}>${product.price}</p>
                     </div>
-                    
-                    <div className="ml-3 flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {product.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {product.category}
-                      </p>
-                    </div>
-                    
-                    <div className="ml-3 flex-shrink-0">
-                      <span className="text-lg font-semibold text-blue-600">
-                        ${product.price}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            ) : searchTerm ? (
-              <div className="py-8 text-center text-gray-500">
-                <ShoppingBag className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                <p>No products found for "{searchTerm}"</p>
-                <p className="text-sm">Try different keywords</p>
-              </div>
-            ) : null}
-
-            {/* Recent Searches */}
-            {!searchTerm && recentSearches.length > 0 && (
-              <div className="border-t border-gray-100 py-2">
-                <p className="text-xs font-medium text-gray-500 px-4 py-2">Recent Searches</p>
-                {recentSearches.map((recent, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      setSearchTerm(recent);
-                      searchProducts(recent);
-                    }}
-                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700"
-                  >
-                    {recent}
-                  </div>
-                ))}
+            ) : (
+              <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                <ShoppingBag style={{ height: '64px', width: '64px', color: '#d1d5db', marginBottom: '16px' }} />
+                <p style={{ fontSize: '20px', fontWeight: '500', color: '#6b7280' }}>No products found</p>
+                <p style={{ fontSize: '14px', color: '#9ca3af' }}>
+                  No results for "<span style={{ fontWeight: '500', color: '#6b7280' }}>{searchTerm}</span>"
+                </p>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Demo Info */}
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-medium text-blue-900 mb-2">Backend Integration Guide:</h3>
-        <div className="text-sm text-blue-800 space-y-1">
-          <p><strong>API Endpoint:</strong> <code>/api/products/search?q=searchterm</code></p>
-          <p><strong>Method:</strong> GET</p>
-          <p><strong>Response:</strong> <code>{`{ "products": [...] }`}</code></p>
-          <p><strong>MongoDB Query Example:</strong></p>
-          <pre className="bg-blue-100 p-2 rounded text-xs mt-2 overflow-x-auto">
-{`// In your Node.js backend
-const searchProducts = async (query) => {
-  const products = await Product.find({
-    $or: [
-      { name: { $regex: query, $options: 'i' } },
-      { category: { $regex: query, $options: 'i' } },
-      { description: { $regex: query, $options: 'i' } }
-    ]
-  }).limit(10);
-  return products;
-};`}
-          </pre>
+      {!showResults && (
+        <div style={{ marginTop: '32px', textAlign: 'center' }}>
+          <p style={{ color: '#6b7280', fontSize: '16px' }}>🔍 Search through thousands of furniture pieces • Quick and smart results</p>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default DynamicProductSearch;
+export default BeautifulProductSearch;
