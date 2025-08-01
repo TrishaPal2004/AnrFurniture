@@ -261,7 +261,29 @@ const Home = () => {
             <button style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>navigate('/track')}>Track Order</button>
             <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }}>Bulk Orders</span>
             <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }}>UI Services</span>
-            <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>navigate('/signup')}>Signup</span>
+{!isLoggedIn ? (
+  <span
+    style={{
+      fontWeight: "bold",
+      textShadow: "2px 4px 4px black",
+      cursor: "pointer"
+    }}
+    onClick={() => navigate("/signup")}
+  >
+    Signup
+  </span>
+) : (
+  <span
+    style={{
+      fontWeight: "bold",
+      textShadow: "2px 4px 4px black",
+      cursor: "pointer"
+    }}
+    onClick={logout}
+  >
+    Logout
+  </span>
+)}
             <button style={{ background: "transparent", border: "none", outline: "none", paddingLeft: "5vh", color: "white", cursor: "pointer" }}>
               <MessageCircleQuestion size={22} />
             </button>
@@ -300,13 +322,13 @@ const Home = () => {
         </div>
 
         {/* Carousel Indicators */}
-        <div className="carousel-indicators">
+        <div className="carousel-indicators" data-bs-interval="4000">
           {Object.keys(heroSections).map((_, i) => (
             <button
               key={i}
               type="button"
               data-bs-target="#carouselExample"
-              data-bs-slide-to={i}
+              data-bs-slide-to={i}          
               className={i === 0 ? "active" : ""}
               aria-label={`Slide ${i + 1}`}
             ></button>

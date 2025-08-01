@@ -16,31 +16,55 @@ router.get('/all', async (req, res) => {
 });
 
 // routes/products.js
+// In your routes file, improve the search route:
+// Fix your search route in the backend:
+// Fix your search route:
+// Corrected search route for your schema:
 router.get('/q', async (req, res) => {
   try {
     const { q } = req.query;
-    console.log("hi");
+    console.log("Search query received:", q);
+    
     if (!q) {
       return res.json({ products: [] });
     }
 
+    const searchQuery = q.trim();
+    
+    // Build search conditions based on your actual schema
+    const searchConditions = [
+      { name: { $regex: searchQuery, $options: 'i' } },
+      { category: { $regex: searchQuery, $options: 'i' } },
+      { description: { $regex: searchQuery, $options: 'i' } },
+      { material: { $regex: searchQuery, $options: 'i' } },
+      { size: { $regex: searchQuery, $options: 'i' } }
+    ];
+
+    // Add price search only if query is numeric
+    const numericQuery = parseFloat(searchQuery);
+    if (!isNaN(numericQuery)) {
+      searchConditions.push(
+        { price: { $gte: numericQuery - 100, $lte: numericQuery + 100 } },
+        { price: numericQuery } // Exact match
+      );
+    }
+
     const products = await PdtSection.find({
-      $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { category: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-        { price: { $regex: q, $options: 'i' } },
-        { material: { $regex: q, $options: 'i' } } ,
-         {size: {$regex: q, $options: 'i' } }
-      ]
+      $or: searchConditions
     })
-    .select('name category price image description')
+    .select('name category price images description material size quantity')
     .limit(10)
     .lean();
 
+    console.log("Found products:", products.length);
     res.json({ products });
+    
   } catch (error) {
-    res.status(500).json({ error: 'Search failed' });
+    console.error('Search error details:', error);
+    res.status(500).json({ 
+      error: 'Search failed', 
+      message: error.message 
+    });
   }
 });
 
