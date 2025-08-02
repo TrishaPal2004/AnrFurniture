@@ -49,7 +49,7 @@ router.post("/add", authMiddleware, async (req, res) => {
         _id: productData._id, // Keep both for compatibility
         name: productData.name,
         price: productData.price,
-        quantity: 1,
+        quantity: productData.minorderquantity,
         images: productData.images || [],
         material: productData.material,
         addedAt: new Date()
