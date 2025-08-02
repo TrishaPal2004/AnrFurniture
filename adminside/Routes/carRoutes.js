@@ -191,4 +191,27 @@ router.get("/count", authMiddleware, async (req, res) => {
   }
 });
 
+
+// DELETE /api/cart/clear - Clear entire cart (THIS IS THE IMPORTANT ONE!)
+router.delete('/clear', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Clear the cart array
+        user.cart = [];
+        await user.save();
+
+        console.log(`Cart cleared for user: ${req.userId}`);
+        res.json({ message: 'Cart cleared successfully', cart: [] });
+    } catch (error) {
+        console.error('Error clearing cart:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
 export default router;
