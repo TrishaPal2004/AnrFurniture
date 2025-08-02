@@ -194,8 +194,9 @@ router.get("/count", authMiddleware, async (req, res) => {
 
 // DELETE /api/cart/clear - Clear entire cart (THIS IS THE IMPORTANT ONE!)
 router.delete('/clear', authMiddleware, async (req, res) => {
+  console.log("deleting cart items");
     try {
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.user.id);
         
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
