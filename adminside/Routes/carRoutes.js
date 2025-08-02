@@ -193,7 +193,7 @@ router.get("/count", authMiddleware, async (req, res) => {
 
 
 // DELETE /api/cart/clear - Clear entire cart (THIS IS THE IMPORTANT ONE!)
-router.delete('/clear', verifyToken, async (req, res) => {
+router.delete('/clear', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.userId);
         
