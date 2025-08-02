@@ -9,7 +9,8 @@ const PdtSchema = new mongoose.Schema({
     date:{type:Date,default:Date.now},
     material: { type: String, required: true },
     size:{type: String, required: true },
-    quantity:{type:Number,required:false} 
+    quantity:{type:Number,required:false},
+    minorderquantity:{type:Number,default:1} 
 })
 
 const PdtSection = mongoose.model('PdtSection', PdtSchema);
