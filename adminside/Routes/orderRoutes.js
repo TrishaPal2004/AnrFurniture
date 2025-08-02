@@ -219,29 +219,9 @@ router.patch('/:orderId/status', async (req, res) => {
       });
     }
 
-    // Reduce product quantities when order is delivered
+    // Use the existing function instead of duplicate code
     if (orderStatus === 'Delivered') {
-      console.log("Processing delivered order - updating quantities");
-      
-      // Loop through order items (adjust based on your order structure)
-      for (const item of order.items) { // or order.products
-        console.log(`Updating product ${item.productId} - reducing by ${item.quantity}`);
-        
-        const updatedProduct = await Product.findByIdAndUpdate(
-          item.productId, // Make sure this matches your product ID field
-          { $inc: { quantity: -item.quantity } }, // Reduce quantity
-          { new: true }
-        );
-        
-        console.log(`Product updated:`, updatedProduct);
-        
-        // Optional: Check if quantity goes below 0
-        if (updatedProduct && updatedProduct.quantity < 0) {
-          console.warn(`Warning: Product ${item.productId} quantity is now negative: ${updatedProduct.quantity}`);
-        }
-      }
-      
-      console.log('All product quantities updated for delivered order');
+      await updateProductQuantitiesIfDelivered(order._id);
     }
 
     res.status(200).json({
@@ -259,7 +239,6 @@ router.patch('/:orderId/status', async (req, res) => {
     });
   }
 });
-
 // Cancel order (user can cancel pending orders)
 router.patch('/:orderId/cancel', async (req, res) => {
   try {
@@ -289,8 +268,12 @@ router.patch('/:orderId/cancel', async (req, res) => {
         message: 'Order cannot be cancelled at this stage'
       });
     }
-    if(order.orderStatus=="Delivered")
-      await updateProductQuantitiesIfDelivered(order._id);
+
+    // If order was delivered, we need to ADD back the quantities
+    if (order.orderStatus === "Delivered") {
+      await restoreProductQuantitiesForCancelledOrder(order._id);
+    }
+
     order.orderStatus = 'Cancelled';
     await order.save();
 
@@ -308,6 +291,39 @@ router.patch('/:orderId/cancel', async (req, res) => {
     });
   }
 });
+
+// Add this new function:
+const restoreProductQuantitiesForCancelledOrder = async (orderId) => {
+  try {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      console.log("Order not found");
+      return;
+    }
+
+    for (const item of order.items) {
+      const product = await PdtSection.findById(item.productId);
+
+      if (product) {
+        const oldQuantity = product.quantity || 0;
+        const newQuantity = oldQuantity + item.quantity; // ADD back the quantity
+
+        product.quantity = newQuantity;
+        await product.save();
+
+        console.log(
+          `Restored ${product.name}: ${oldQuantity} → ${newQuantity}`
+        );
+      } else {
+        console.log(`Product not found: ${item.productId}`);
+      }
+    }
+
+  } catch (error) {
+    console.error("Error restoring product quantities:", error);
+  }
+};
 
 
 router.post('/track', authMiddleware, async (req, res) => {
