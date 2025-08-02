@@ -3,6 +3,7 @@ import express from 'express';
 import Order from '../models/Order.js'; // Adjust path to your Order model
 import authMiddleware from '../Middlewares/auth.js';
 import adminMiddleware from '../Middlewares/admin.js';
+import PdtSection from '../models/Product.js';
 // import { authenticateToken } from '../Middleware/auth.js'; // Your auth middleware
 
 const router = express.Router();
@@ -188,11 +189,12 @@ router.get('/:orderId',  async (req, res) => {
 });
 
 // Update order status (admin only - add admin middleware as needed)
-router.patch('/:orderId/status',  async (req, res) => {
+router.patch('/:orderId/status', async (req, res) => {
   try {
     const orderId = req.params.orderId.trim();
     const { orderStatus } = req.body;
-    console.log("hii",orderStatus);
+    console.log("hii", orderStatus);
+    
     const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
     
     if (!validStatuses.includes(orderStatus)) {
@@ -207,15 +209,42 @@ router.patch('/:orderId/status',  async (req, res) => {
       { orderStatus },
       { new: true }
     );
-console.log(order);
+    
+    console.log("Updated order:", order);
+    
     if (!order) {
       return res.status(404).json({
         success: false,
         message: 'Order not found'
       });
     }
-    
-    res.json({
+
+    // Reduce product quantities when order is delivered
+    if (orderStatus === 'Delivered') {
+      console.log("Processing delivered order - updating quantities");
+      
+      // Loop through order items (adjust based on your order structure)
+      for (const item of order.items) { // or order.products
+        console.log(`Updating product ${item.productId} - reducing by ${item.quantity}`);
+        
+        const updatedProduct = await Product.findByIdAndUpdate(
+          item.productId, // Make sure this matches your product ID field
+          { $inc: { quantity: -item.quantity } }, // Reduce quantity
+          { new: true }
+        );
+        
+        console.log(`Product updated:`, updatedProduct);
+        
+        // Optional: Check if quantity goes below 0
+        if (updatedProduct && updatedProduct.quantity < 0) {
+          console.warn(`Warning: Product ${item.productId} quantity is now negative: ${updatedProduct.quantity}`);
+        }
+      }
+      
+      console.log('All product quantities updated for delivered order');
+    }
+
+    res.status(200).json({
       success: true,
       message: 'Order status updated successfully',
       order
@@ -225,7 +254,8 @@ console.log(order);
     console.error('Error updating order status:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update order status'
+      message: 'Internal server error',
+      error: error.message
     });
   }
 });
