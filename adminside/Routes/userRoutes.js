@@ -153,151 +153,196 @@ router.post('/all',authMiddleware,adminMiddleware, async (req, res) => {
 // OTP vERFIFY
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const serviceSid = process.env.TWILIO_SERVICE_SID; // Verify Service SID
-const client = twilio(accountSid, authToken);
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+console.log('Twilio Config Check:');
+console.log('Account SID:', accountSid ? 'Set' : 'Missing');
+console.log('Auth Token:', authToken ? 'Set' : 'Missing');
+console.log('Phone Number:', twilioPhoneNumber ? twilioPhoneNumber : 'Missing');
+
+let client;
+try {
+  if (accountSid && authToken) {
+    client = twilio(accountSid, authToken);
+    console.log('Twilio client initialized successfully');
+  } else {
+    console.error('Twilio credentials missing!');
+  }
+} catch (error) {
+  console.error('Failed to initialize Twilio client:', error);
+}
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map();
 
 // Helper function to format phone number
 const formatPhoneNumber = (phone) => {
-  // Convert to string if it's a number
-  let phoneStr = phone.toString();
-  
-  // Remove all non-digits
-  let cleaned = phoneStr.replace(/\D/g, '');
-  
-  // Add country code if not present
-  if (cleaned.length === 10) {
-    cleaned = '1' + cleaned; // Add US country code
+  try {
+    // Convert to string if it's a number
+    let phoneStr = phone.toString();
+    
+    // Remove all non-digits
+    let cleaned = phoneStr.replace(/\D/g, '');
+    
+    console.log('Formatting phone:', phone, '-> cleaned:', cleaned);
+    
+    // Add country code if not present
+    if (cleaned.length === 10) {
+      cleaned = '1' + cleaned; // Add US country code
+    }
+    
+    // Add + prefix
+    const formatted = '+' + cleaned;
+    console.log('Final formatted phone:', formatted);
+    return formatted;
+  } catch (error) {
+    console.error('Error formatting phone number:', error);
+    throw new Error('Invalid phone number format');
   }
-  
-  // Add + prefix
-  return '+' + cleaned;
 };
 
 // 1. Send OTP via SMS for password reset
 router.post('/forgot-password-sms', async (req, res) => {
   try {
+    console.log('=== FORGOT PASSWORD SMS REQUEST ===');
+    console.log('Request body:', req.body);
+    
     const { phone } = req.body;
 
     if (!phone) {
+      console.log('Error: Phone number missing');
       return res.status(400).json({ error: 'Phone number is required' });
     }
 
+    // Check Twilio client
+    if (!client) {
+      console.log('Error: Twilio client not initialized');
+      return res.status(500).json({ error: 'SMS service not configured' });
+    }
+
+    if (!twilioPhoneNumber) {
+      console.log('Error: Twilio phone number not configured');
+      return res.status(500).json({ error: 'SMS service phone number not configured' });
+    }
+
     const formattedPhone = formatPhoneNumber(phone);
+    console.log('Formatted phone for Twilio:', formattedPhone);
 
     // Check if user exists with this phone number
     // Convert phone to number for database query
-    const phoneNumber = parseInt(phone.replace(/\D/g, ''));
+    const phoneNumber = parseInt(phone.toString().replace(/\D/g, ''));
+    console.log('Looking for user with phone number:', phoneNumber);
+    
     const user = await User.findOne({ phoneno: phoneNumber });
     if (!user) {
+      console.log('Error: User not found with phone:', phoneNumber);
       return res.status(404).json({ error: 'User not found with this phone number' });
     }
+    
+    console.log('User found:', user.name, user.email);
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Generated OTP:', otp);
     
     // Generate unique token for this OTP session
     const otpToken = crypto.randomBytes(32).toString('hex');
+    console.log('Generated OTP token:', otpToken);
     
     // Store OTP with expiration (5 minutes)
     otpStore.set(otpToken, {
       phone: formattedPhone,
+      originalPhone: phoneNumber,
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
       verified: false
     });
+    
+    console.log('OTP stored in memory');
 
     // Send OTP via Twilio SMS
     try {
-      await client.messages.create({
+      console.log('Attempting to send SMS...');
+      console.log('From:', twilioPhoneNumber);
+      console.log('To:', formattedPhone);
+      console.log('Message: OTP:', otp);
+      
+      const message = await client.messages.create({
         body: `Your password reset OTP is: ${otp}. This code will expire in 5 minutes. Do not share this code with anyone.`,
-        from: process.env.TWILIO_PHONE_NUMBER, // Your Twilio phone number
+        from: twilioPhoneNumber,
         to: formattedPhone
       });
+      
+      console.log('SMS sent successfully! Message SID:', message.sid);
+      console.log('Message status:', message.status);
+      
     } catch (twilioError) {
-      console.error('Twilio SMS error:', twilioError);
-      return res.status(500).json({ error: 'Failed to send SMS. Please check your phone number.' });
+      console.error('=== TWILIO SMS ERROR ===');
+      console.error('Error code:', twilioError.code);
+      console.error('Error message:', twilioError.message);
+      console.error('More info:', twilioError.moreInfo);
+      console.error('Status:', twilioError.status);
+      console.error('Full error:', twilioError);
+      
+      // Return specific Twilio error
+      let errorMessage = 'Failed to send SMS';
+      if (twilioError.code === 21211) {
+        errorMessage = 'Invalid phone number format';
+      } else if (twilioError.code === 21614) {
+        errorMessage = 'Phone number not verified (trial account)';
+      } else if (twilioError.code === 21408) {
+        errorMessage = 'Permission denied - check Twilio credentials';
+      } else if (twilioError.message) {
+        errorMessage = twilioError.message;
+      }
+      
+      return res.status(500).json({ 
+        error: errorMessage,
+        twilioCode: twilioError.code,
+        details: twilioError.message
+      });
     }
 
+    console.log('SMS operation completed successfully');
     res.status(200).json({ 
       message: 'OTP sent successfully',
-      otpToken // Send token to frontend
+      otpToken,
+      debug: {
+        formattedPhone,
+        originalPhone: phoneNumber,
+        userFound: true
+      }
     });
 
   } catch (error) {
-    console.error('Forgot password SMS error:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
-  }
-});
-
-// Alternative method using Twilio Verify Service (recommended for production)
-router.post('/forgot-password-verify', async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({ error: 'Phone number is required' });
-    }
-
-    const formattedPhone = formatPhoneNumber(phone);
-
-    // Check if user exists with this phone number
-    // Convert phone to number for database query
-    const phoneNumber = parseInt(phone.replace(/\D/g, ''));
-    const user = await User.findOne({ phoneno: phoneNumber });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found with this phone number' });
-    }
-
-    // Generate unique token for this session
-    const otpToken = crypto.randomBytes(32).toString('hex');
+    console.error('=== GENERAL ERROR ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
-    // Store session info
-    otpStore.set(otpToken, {
-      phone: formattedPhone,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-      verified: false
+    res.status(500).json({ 
+      error: 'Failed to send OTP',
+      details: error.message,
+      type: error.name
     });
-
-    // Send OTP using Twilio Verify Service
-    try {
-      await client.verify.v2.services(serviceSid)
-        .verifications
-        .create({
-          to: formattedPhone,
-          channel: 'sms'
-        });
-    } catch (twilioError) {
-      console.error('Twilio Verify error:', twilioError);
-      return res.status(500).json({ error: 'Failed to send OTP. Please check your phone number.' });
-    }
-
-    res.status(200).json({ 
-      message: 'OTP sent successfully',
-      otpToken
-    });
-
-  } catch (error) {
-    console.error('Forgot password verify error:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
   }
 });
 
-// 2. Verify OTP (for manual SMS method)
+// 2. Verify OTP
 router.post('/verify-otp-sms', async (req, res) => {
   try {
+    console.log('=== VERIFY OTP REQUEST ===');
+    console.log('Request body:', req.body);
+    
     const { phone, otp, otpToken } = req.body;
 
     if (!phone || !otp || !otpToken) {
       return res.status(400).json({ error: 'Phone, OTP, and token are required' });
     }
 
-    const formattedPhone = formatPhoneNumber(phone);
-
     // Get stored OTP data
     const storedData = otpStore.get(otpToken);
+    console.log('Stored OTP data:', storedData);
     
     if (!storedData) {
       return res.status(400).json({ error: 'Invalid or expired OTP session' });
@@ -309,8 +354,15 @@ router.post('/verify-otp-sms', async (req, res) => {
       return res.status(400).json({ error: 'OTP has expired' });
     }
 
+    const phoneNumber = parseInt(phone.toString().replace(/\D/g, ''));
+    
     // Verify OTP and phone
-    if (storedData.phone !== formattedPhone || storedData.otp !== otp) {
+    if (storedData.originalPhone !== phoneNumber || storedData.otp !== otp) {
+      console.log('OTP verification failed:');
+      console.log('Expected phone:', storedData.originalPhone);
+      console.log('Received phone:', phoneNumber);
+      console.log('Expected OTP:', storedData.otp);
+      console.log('Received OTP:', otp);
       return res.status(400).json({ error: 'Invalid OTP or phone number' });
     }
 
@@ -318,6 +370,7 @@ router.post('/verify-otp-sms', async (req, res) => {
     storedData.verified = true;
     otpStore.set(otpToken, storedData);
 
+    console.log('OTP verified successfully');
     res.status(200).json({ message: 'OTP verified successfully' });
 
   } catch (error) {
@@ -326,67 +379,12 @@ router.post('/verify-otp-sms', async (req, res) => {
   }
 });
 
-// 2. Verify OTP (for Twilio Verify Service)
-router.post('/verify-otp-verify', async (req, res) => {
-  try {
-    const { phone, otp, otpToken } = req.body;
-
-    if (!phone || !otp || !otpToken) {
-      return res.status(400).json({ error: 'Phone, OTP, and token are required' });
-    }
-
-    const formattedPhone = formatPhoneNumber(phone);
-
-    // Get stored session data
-    const storedData = otpStore.get(otpToken);
-    
-    if (!storedData) {
-      return res.status(400).json({ error: 'Invalid or expired session' });
-    }
-
-    // Check if session expired
-    if (Date.now() > storedData.expiresAt) {
-      otpStore.delete(otpToken);
-      return res.status(400).json({ error: 'Session has expired' });
-    }
-
-    // Verify phone matches
-    if (storedData.phone !== formattedPhone) {
-      return res.status(400).json({ error: 'Invalid session' });
-    }
-
-    // Verify OTP using Twilio Verify Service
-    try {
-      const verificationCheck = await client.verify.v2.services(serviceSid)
-        .verificationChecks
-        .create({
-          to: formattedPhone,
-          code: otp
-        });
-
-      if (verificationCheck.status !== 'approved') {
-        return res.status(400).json({ error: 'Invalid OTP' });
-      }
-    } catch (twilioError) {
-      console.error('Twilio verification error:', twilioError);
-      return res.status(400).json({ error: 'Invalid OTP' });
-    }
-
-    // Mark as verified
-    storedData.verified = true;
-    otpStore.set(otpToken, storedData);
-
-    res.status(200).json({ message: 'OTP verified successfully' });
-
-  } catch (error) {
-    console.error('Verify OTP verify error:', error);
-    res.status(500).json({ error: 'Failed to verify OTP' });
-  }
-});
-
 // 3. Reset password
 router.post('/reset-password-sms', async (req, res) => {
   try {
+    console.log('=== RESET PASSWORD REQUEST ===');
+    console.log('Request body:', req.body);
+    
     const { phone, newPassword, otpToken } = req.body;
 
     if (!phone || !newPassword || !otpToken) {
@@ -397,10 +395,9 @@ router.post('/reset-password-sms', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    const formattedPhone = formatPhoneNumber(phone);
-
     // Get stored OTP data
     const storedData = otpStore.get(otpToken);
+    console.log('Stored data for password reset:', storedData);
     
     if (!storedData) {
       return res.status(400).json({ error: 'Invalid or expired session' });
@@ -417,13 +414,14 @@ router.post('/reset-password-sms', async (req, res) => {
       return res.status(400).json({ error: 'Session has expired' });
     }
 
+    const phoneNumber = parseInt(phone.toString().replace(/\D/g, ''));
+    
     // Verify phone matches
-    if (storedData.phone !== formattedPhone) {
+    if (storedData.originalPhone !== phoneNumber) {
       return res.status(400).json({ error: 'Invalid session' });
     }
 
-    // Find user by phone number (convert to number for database query)
-    const phoneNumber = parseInt(phone.replace(/\D/g, ''));
+    // Find user by phone number
     const user = await User.findOne({ phoneno: phoneNumber });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -439,12 +437,25 @@ router.post('/reset-password-sms', async (req, res) => {
     // Clean up OTP session
     otpStore.delete(otpToken);
 
+    console.log('Password reset successfully for user:', user.email);
     res.status(200).json({ message: 'Password reset successfully' });
 
   } catch (error) {
     console.error('Reset password SMS error:', error);
     res.status(500).json({ error: 'Failed to reset password' });
   }
+});
+
+// Debug endpoint to check configuration
+router.get('/debug-config', (req, res) => {
+  res.json({
+    twilioConfigured: !!(accountSid && authToken && twilioPhoneNumber),
+    accountSidSet: !!accountSid,
+    authTokenSet: !!authToken,
+    phoneNumberSet: !!twilioPhoneNumber,
+    phoneNumber: twilioPhoneNumber,
+    otpStoreSize: otpStore.size
+  });
 });
 
 // Clean up expired OTPs periodically
@@ -456,5 +467,4 @@ setInterval(() => {
     }
   }
 }, 60000);
-
 export default router;
