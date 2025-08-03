@@ -50,6 +50,7 @@ router.post("/add", authMiddleware, async (req, res) => {
         name: productData.name,
         price: productData.price,
         quantity: productData.minorderquantity,
+        minorderquantity:productData.minorderquantity,
         images: productData.images || [],
         material: productData.material,
         addedAt: new Date()

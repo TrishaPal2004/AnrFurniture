@@ -8,7 +8,8 @@ const cartItemSchema = new mongoose.Schema({
     },
     name: { type: String, required: true },
     price: { type: Number, required: true },
-    quantity: { type: Number, default: 1, min: 1 },
+    quantity: { type: Number, default: 1 },
+    minorderquantity:{type:Number,default:1},
     images:  { type: [String], required: true }, // Array of image URLs
     material: {type:String,required:true},
     addedAt: { type: Date, default: Date.now }
