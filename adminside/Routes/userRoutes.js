@@ -7,6 +7,7 @@ import authMiddleware from "../Middlewares/auth.js";
 import adminMiddleware from "../Middlewares/admin.js";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "yoursecretkey"; // Add this in .env
+import twilio from 'twilio';
 
 // ✅ POST /signup
 router.post("/signup", async (req, res) => {
