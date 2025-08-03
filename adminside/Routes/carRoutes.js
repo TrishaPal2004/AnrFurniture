@@ -44,12 +44,13 @@ router.post("/add", authMiddleware, async (req, res) => {
       user.cart[existingItemIndex].quantity += 1;
     } else {
       // Add new item to cart
+      console.log(productData.minorderquantity1);
       const cartItem = {
         productId: productData._id,
         _id: productData._id, // Keep both for compatibility
         name: productData.name,
         price: productData.price,
-        minorderquantity:productData.minorderquantity,
+        minorderquantity1:productData.minorderquantity,
         quantity: productData.minorderquantity,
         images: productData.images || [],
         material: productData.material,
