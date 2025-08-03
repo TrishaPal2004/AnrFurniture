@@ -98,13 +98,13 @@ router.post("/login", async (req, res) => {
 });
 
 
-  router.post("/:id/cart", authMiddleware, async (req, res) => {
-    console.log("hiii");
+ router.post("/:id/cart", authMiddleware, async (req, res) => {
+  console.log("Adding to cart endpoint hit");
   try {
-    const { productId, name, price, images, material, quantity } = req.body;
+    const { productId, name, price, images, material, quantity, minorderquantity } = req.body; // Get minorderquantity from req.body
     const userId = req.user.id;
 
-    console.log("Adding to  hello", productId, name, price, images, material,minorderquantity1);
+    console.log("Adding to cart:", productId, name, price, images, material, quantity, minorderquantity);
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -120,13 +120,13 @@ router.post("/login", async (req, res) => {
       price,
       images,
       material,
-      quantity: quantity || 1,
-      minorderquantity1:minorderquantity1
+      quantity: minorderquantity, // Use minimum quantity as default
+      minorderquantity: minorderquantity || 1 // Store the minimum order quantity
     });
 
     await user.save();
     res.status(200).json({ message: "Product added to cart", cart: user.cart });
-
+    
   } catch (err) {
     console.error("Error adding to cart:", err);
     res.status(500).json({ error: "Failed to add product to cart" });
