@@ -104,7 +104,7 @@ router.post("/login", async (req, res) => {
     const { productId, name, price, images, material, quantity } = req.body;
     const userId = req.user.id;
 
-    console.log("Adding to  hello", productId, name, price, images, material);
+    console.log("Adding to  hello", productId, name, price, images, material,minorderquantity1);
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -121,6 +121,7 @@ router.post("/login", async (req, res) => {
       images,
       material,
       quantity: quantity || 1,
+      minorderquantity1:minorderquantity1
     });
 
     await user.save();
