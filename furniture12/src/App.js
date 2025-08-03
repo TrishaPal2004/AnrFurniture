@@ -15,6 +15,7 @@ import Order1 from './Admin/Order1.js';
 import TrackOrder from './Pages/TrackOrder.js';
 import Productslog from './Admin/Productslog.js';
 import Searchbar from './Pages/Searchbar.js'
+import ForgotPassword from './Pages/ForgotPassword.js';
 const App = () => {
   return (
     <AuthProvider>
@@ -33,6 +34,7 @@ const App = () => {
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/pdtlog" element={<Productslog/>}/>
             <Route path="/search" element={<Searchbar/>}/>
+            <Route path="/forgot-password" element={<ForgotPassword/>}/>
           </Routes>
         </BrowserRouter>
     

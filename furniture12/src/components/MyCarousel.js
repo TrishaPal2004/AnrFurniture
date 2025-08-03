@@ -14,6 +14,15 @@ const ContactSection = () => {
     flexWrap: "wrap",
   };
 
+
+  const handleWhatsAppClick = () => {
+  const phoneNumber = "918597766538";
+  const message = encodeURIComponent(`Hi! I'm want a customised product!`);
+  const url = `https://wa.me/${phoneNumber}?text=${message}`;
+  window.open(url, '_blank');
+};
+
+
   const leftStyle = {
     flex: 1,
     textAlign: isMobile ? "center" : "left",
@@ -73,7 +82,7 @@ const ContactSection = () => {
           Let us help you<br />
           make <em>the</em> move
         </h1>
-        <button style={buttonStyle}>CONTACT US</button>
+        <button style={buttonStyle} onClick={handleWhatsAppClick}>CONTACT US</button>
       </div>
 
       {/* Right: Framed Video */}

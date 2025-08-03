@@ -21,6 +21,27 @@ const Home = () => {
   }, []);
 
 
+const handleWhatsAppClick = () => {
+  const phoneNumber = "918597766538";
+  const message = encodeURIComponent(`Hi! I'm want a customised product!`);
+  const url = `https://wa.me/${phoneNumber}?text=${message}`;
+  window.open(url, '_blank');
+};
+
+
+   const [isMobile, setIsMobile] = useState(false);
+
+  // Check screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   const navigate = useNavigate();
 
   const handleCategoryClick = (category) => {
@@ -89,8 +110,9 @@ const Home = () => {
               fontWeight: "bold",
               cursor: "pointer",
               transition: "all 0.3s ease",
-              zIndex: 4,
+              zIndex: 24,
             }}
+            onClick={()=>{handleCategoryClick("New Arrival")}}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = "rgb(170, 127, 26)";
               e.target.style.transform = "scale(1.05)";
@@ -151,7 +173,9 @@ const Home = () => {
               fontSize: "0.95rem",
               fontWeight: "bold",
               cursor: "pointer",
+             z:"12"
             }}
+            onClick={() => handleCategoryClick("New Arrival")}
           >
             {data.buttonText || "Explore More"}
           </button>
@@ -164,40 +188,51 @@ const Home = () => {
     <div className="container-fit">
       {/* Header Section - Made Responsive */}
       <div style={{
-        paddingTop: "1.5vh",
-        backgroundColor: "rgb(190, 147, 46)",
-        height: "10vh",
-        display: "flex",
-        paddingLeft: "2vw",
-        paddingRight: "2vw",
-        //justifyContent: "space-between",
-        //alignItems: "center",
-        //textAlign: "center",
-       // flexWrap: "wrap"
-      }}>
-        <img
-          src="./logo.jpeg"
-          alt="Logo"
-          style={{
-            height: "18vh",
-            borderRadius: "50%",
-            width: "18vh",
-            border: "0.01vh solid black",
-            boxShadow: "8px 8px 0 rgba(0, 0, 0)",
-            zIndex: "5",
-            minHeight: "80px",
-            minWidth: "60px"
-          }}
-        />
+      paddingTop: isMobile ? "1vh" : "1.5vh",
+      backgroundColor: "rgb(190, 147, 46)",
+      height: isMobile ? "5vh" : "10vh",
+      minHeight: isMobile ? "12vh" : "10vh",
+      display: "flex",
+      paddingLeft: isMobile ? "1vw" : "2vw",
+      paddingRight: isMobile ? "15vw" : "2vw",
+      paddingBottom: isMobile ? "1vh" : "0",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: isMobile ? "center" : "flex-start",
+      justifyContent: isMobile ? "center" : "flex-start",
+      textAlign: isMobile ? "center" : "left",
+      flexWrap: "wrap",
+      position: "relative"
+    }}>
+      
+      {/* Logo */}
+      <img
+        src="./logo.jpeg"
+        alt="Logo"
+        style={{
+          height: isMobile ? "10vh" : "18vh",
+          borderRadius: "50%",
+          width: isMobile ? "10vh" : "18vh",
+          border: "0.01vh solid black",
+          boxShadow: "8px 8px 0 rgba(0, 0, 0)",
+          zIndex: "5",
+          minHeight: isMobile ? "60px" : "80px",
+          minWidth: isMobile ? "60px" : "60px",
+          marginBottom: isMobile ? "1vh" : "0",
+          alignSelf: isMobile ? "center" : "flex-start"
+        }}
+      />
 
-        {/* Desktop Promo Text */}
-        <div style={{ 
-          display: window.innerWidth > 768 ? "flex" : "none", 
+      {/* Desktop Promo Text */}
+      {!isMobile && (
+        <div style={{
+          display: "flex",
           paddingRight: "10%",
           paddingLeft: "10%",
           flexWrap: "wrap",
           justifyContent: "center",
-          z:2
+          alignItems: "center",
+          zIndex: 2,
+          flex: 1
         }}>
           <p style={{
             color: "white",
@@ -205,43 +240,63 @@ const Home = () => {
             textAlign: "center",
             fontWeight: "bold",
             textShadow: "2px 2px 4px black",
-            zIndex:10
-          }}>Use Code EXTRA5000 to get additional 5000 off! </p>
+            zIndex: 10,
+            margin: "0 0.5rem 0 0"
+          }}>
+            Use Code EXTRA5000 to get additional 5000 off!
+          </p>
           <p style={{
             color: "Black",
             fontSize: "1.2rem",
             fontWeight: "bold",
             textShadow: "0.1px 0.1px 0.4px black",
             paddingLeft: "0.2vw",
-          }}>Shop Now!</p>
-
-
-        </div>
-
-      
-        {/* Mobile Promo Text */}
-        {isMobileMenuOpen && (
-          <div className="d-block d-md-none" style={{
-            width: "100%",
-            textAlign: "center",
-            marginTop: "2vh",
-            paddingTop: "2vh",
-            borderTop: "1px solid rgba(255,255,255,0.3)"
+            margin: "0"
           }}>
-            <p style={{
-              color: "white",
-              fontSize: "0.9rem",
-              fontWeight: "bold",
-              margin: "0"
-            }}>Use Code EXTRA5000 for 5000 off! Shop Now!</p>
-           </div>
+            Shop Now!
+          </p>
+        </div>
+      )}
 
-          )}
-          </div>
+      {/* Mobile Promo Text */}
+      {isMobile && (
+        <div style={{
+          width: "100%",
+          textAlign: "center",
+          display: "flex",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "0.5rem"
+        }}>
+          <p style={{
+            color: "white",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            margin: "0",
+            textShadow: "1px 1px 2px black",
+            lineHeight: "1.2"
+          }}>
+            Use Code EXTRA5000 for 5000 off!
+          </p>
+          <p style={{
+            color: "Black",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            margin: "0",
+            textShadow: "0.5px 0.5px 1px black",
+            lineHeight: "1.2"
+          }}>
+            Shop Now!
+          </p>
+        </div>
+      )}
+    </div>
       {/* Carousel Section */}
       <div id="carouselExample" className="carousel slide position-relative" data-bs-ride="carousel">
         {/* Nav Controls - Desktop Only */}
-        <div className="position-absolute translate-middle d-none d-lg-flex" role="search" style={{
+        {!isMobile && (<div className="position-absolute translate-middle d-none d-lg-flex" role="search" style={{
           zIndex: 4,
           background: "transparent",
           color: "black",
@@ -261,8 +316,8 @@ const Home = () => {
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: "3vw", marginLeft: "4vw", color: "white", width: "100%", fontSize: "1.2rem" }}>
             <button style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>navigate('/track')}>Track Order</button>
-            <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }}>Bulk Orders</span>
-            <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }}>UI Services</span>
+            <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>{handleCategoryClick("Bulk Order")}}>Bulk Orders</span>
+            <span style={{ fontWeight: "bold", textShadow: "2px 4px 4px black", cursor: "pointer" }} onClick={()=>{handleCategoryClick("UI Services")}}>UI Services</span>
 {!isLoggedIn ? (
   <span
     style={{
@@ -286,42 +341,155 @@ const Home = () => {
     Logout
   </span>
 )}
-            <button style={{ background: "transparent", border: "none", outline: "none", paddingLeft: "5vh", color: "white", cursor: "pointer" }}>
+            <button style={{ background: "transparent", border: "none", outline: "none", paddingLeft: "5vh", color: "white", cursor: "pointer" }} onClick={handleWhatsAppClick}>
               <MessageCircleQuestion size={22} />
             </button>
           </div>
-        </div>
+        </div>)}
 
-        {/* Mobile Search Bar */}
-        <div className="d-block d-lg-none position-absolute" style={{
-          top: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 4,
-          width: "90%",
-          maxWidth: "300px"
-        }}>
-          <div style={{
-            background: "rgba(255,255,255,0.9)",
-            borderRadius: "25px",
-            padding: "8px 15px",
-            display: "flex",
-            alignItems: "center"
-          }}>
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              style={{
-                border: "none",
-                outline: "none",
-                background: "transparent",
-                flex: 1,
-                fontSize: "14px"
-              }}
-            />
-            <Search size={18} style={{ color: "#666" }} />
-          </div>
-        </div>
+      {/* //Mobile */}
+
+{isMobile && (<div
+  className="position-absolute translate-middle d-flex flex-column flex-lg-row"
+  role="search"
+  style={{
+    marginTop:"5vh",
+    zIndex: 4,
+    background: "transparent",
+    color: "black",
+    padding: "10px",
+    borderRadius: "10px",
+    left: "50%",
+    top: "5vh",
+    transform: "translate(-50%, 0)",
+    width: "95vw",
+    maxWidth: "1000px",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+  }}
+>
+  <button
+    onClick={() => navigate("/search")}
+    style={{ width: "100%", maxWidth: "300px", background: "transparent", border: "none", padding: 0 }}
+  >
+    <div className="custom-search-bar" style={{ display: "flex", alignItems: "center", width: "100%" }}>
+      <input
+        type="text"
+        placeholder="Search..."
+        className="search-input"
+        style={{
+          flex: 1,
+          padding: "8px 12px",
+          fontSize: "1rem",
+          border: "1px solid #ccc",
+          borderRadius: "4px 0 0 4px",
+          width: "100%",
+        }}
+      />
+      <button
+        className="search-icon"
+        style={{
+          background: "transparent",
+          border: "1px solid #ccc",
+          borderLeft: "none",
+          borderRadius: "0 4px 4px 0",
+          padding: "8px",
+          cursor: "pointer",
+        }}
+      >
+        <Search size={20} />
+      </button>
+    </div>
+  </button>
+
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "10px",
+      color: "white",
+      fontSize: "1.1rem",
+      marginTop: "10px",
+    }}
+    className="flex-lg-row flex-column justify-content-lg-between align-items-lg-center w-100"
+  >
+    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "15px", textAlign: "center" }}>
+      <button
+        style={{
+          fontWeight: "bold",
+          textShadow: "2px 4px 4px black",
+          background: "transparent",
+          border: "none",
+          color: "white",
+          cursor: "pointer",
+        }}
+        onClick={() => navigate("/track")}
+      >
+        Track Order
+      </button>
+
+      <span
+        style={{
+          fontWeight: "bold",
+          textShadow: "2px 4px 4px black",
+          cursor: "pointer",
+        }}
+        onClick={() => handleCategoryClick("Bulk Order")}
+      >
+        Bulk Orders
+      </span>
+
+      <span
+        style={{
+          fontWeight: "bold",
+          textShadow: "2px 4px 4px black",
+          cursor: "pointer",
+        }}
+      >
+        UI Services
+      </span>
+
+      {!isLoggedIn ? (
+        <span
+          style={{
+            fontWeight: "bold",
+            textShadow: "2px 4px 4px black",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/signup")}
+        >
+          Signup
+        </span>
+      ) : (
+        <span
+          style={{
+            fontWeight: "bold",
+            textShadow: "2px 4px 4px black",
+            cursor: "pointer",
+          }}
+          onClick={logout}
+        >
+          Logout
+        </span>
+      )}
+
+      <button
+        style={{
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          color: "white",
+          cursor: "pointer",
+        }}
+      >
+        <MessageCircleQuestion size={22} />
+      </button>
+    </div>
+  </div>
+</div>)}
 
         {/* Carousel Indicators */}
         <div className="carousel-indicators" data-bs-interval="4000">
@@ -465,6 +633,7 @@ const Home = () => {
       </div>
          
       {/* Terra Collection Section - Made Responsive */}
+      <div>
       <div style={{
         backgroundColor: "rgb(0, 10, 0)",
         display: "flex",
@@ -472,7 +641,7 @@ const Home = () => {
         alignItems: "center",
         padding: "2vh 2rem",
         fontFamily: "Bitter, serif",
-        width:"99vw",
+        width:"100vw",
         //flexDirection: window.innerWidth < 768 ? "column" : "row"
       }}>
         {/* Left Image - Hidden on mobile */}
@@ -543,6 +712,7 @@ const Home = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 15px rgba(190, 147, 46, 0.3)"
               }}
+              onClick={() => handleCategoryClick("UI Services")}
               onMouseOver={(e) => {
                 e.target.style.backgroundColor = "rgb(210, 167, 66)";
                 e.target.style.transform = "translateY(-2px)";
@@ -561,12 +731,13 @@ const Home = () => {
         <img 
           src="./doorr.png" 
           style={{ 
-            width: window.innerWidth < 768 ? "20vw" : "70vh",
+            width: window.innerWidth < 768 ? "22vw" : "70vh",
             height: window.innerWidth < 768 ? "97.5vw" : "70vh",
             //display: window.innerWidth < 768 ? "none" : "block"
           }} 
           alt="right" 
         />
+      </div>
       </div>
 
       {/* Featured Collection Section - Made Responsive */}
@@ -623,6 +794,7 @@ const Home = () => {
           transition: "all 0.3s ease",
           boxShadow: "0 4px 15px rgba(190, 147, 46, 0.3)"
         }}
+        onClick={() => handleCategoryClick("New Arrival")}
         onMouseOver={(e) => {
           e.target.style.backgroundColor = "rgb(210, 167, 66)";
           e.target.style.transform = "scale(1.05)";
@@ -711,8 +883,20 @@ const Home = () => {
           </div>
         ))}
       </div>
-      <div id="multiItemCarousel" className="carousel slide" data-bs-ride="carousel" style={{height:"40vw",backgroundColor: "black",width:"99vw",alignItems: "center", justifyContent: "center",textAlign:"center",dispaly:"flex",flexDirection:"column"}}>
-        <h1 style={{color:"white",fontSize:window.innerWidth<786?"4vh":"14vh",fontFamily:"Dancing Script,cursive"}}>Our Products</h1>
+      <div id="multiItemCarousel" className="carousel slide" data-bs-ride="carousel" style={{height:window.innerWidth<786?"90vw":"40vw",backgroundColor: "black",width:"99vw",alignItems: "center", justifyContent: "center",textAlign:"center",dispaly:"flex",flexDirection:"column"}}>
+        <h1 style={{color: "white", 
+          fontSize: window.innerWidth < 768 ? "2.4rem" : "5rem", 
+          fontWeight: "bold", 
+          textAlign: "center",
+          marginBottom: "3vh",
+          lineHeight: "1.3",
+          fontFamily: "Dancing Script, cursive",
+          zIndex: 2,
+          position: "relative",
+          background: "linear-gradient(45deg, #fff, #be932e)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text"}}>Our Products</h1>
   <div className="carousel-inner" style={{width:window.innerWidth<786?"110vw":"100vw"}}>
 
     {/* Slide 1 */}
@@ -746,7 +930,7 @@ const Home = () => {
     <span className="visually-hidden">Next</span>
   </button>
 </div>
-     <div style={{height:"70vw", backgroundColor: "black",justifyContent: "center", textAlign:"center",display:"flex",flexDirection:"column"}}>
+     <div style={{height:window.innerWidth<786?"124vw":"70vw", backgroundColor: "black",justifyContent: "center", textAlign:"center",display:"flex",flexDirection:"column"}}>
        <h1  style={{color: "white", 
           fontSize: window.innerWidth < 768 ? "2.4rem" : "5rem", 
           fontWeight: "bold", 
@@ -759,17 +943,17 @@ const Home = () => {
           background: "linear-gradient(45deg, #fff, #be932e)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          backgroundClip: "text"}}>Comfort Rooted in Every Style !</h1>
-      <div id="carouselExample1" className="carousel slide">
-  <div className="carousel-inner">
-    <div className="carousel-item active">
-      <img src="./cus.jpg" className="d-block w-100" alt="..."/>
+          backgroundClip: "text"}} >Comfort Rooted in Every Style !</h1>
+      <div id="carouselExample1" className="carousel slide" >
+  <div className="carousel-inner" >
+    <div className="carousel-item active" >
+      <img src="./cus.jpg" className="d-block w-100" alt="..." style={{height:window.innerWidth<786?"64vw":"35vw"}}/>
     </div>
     <div className="carousel-item">
-      <img src="./cus21.jpg" className="d-block w-100" alt="..." style={{height:"37.5vw"}}/>
+      <img src="./cus21.jpg" className="d-block w-100" alt="..." style={{height:window.innerWidth<786?"64vw":"35vw"}}/>
     </div>
     <div className="carousel-item">
-      <img src="./cus3.jpg" className="d-block w-100" alt="..." style={{height:"37.5vw"}}/>
+      <img src="./cus3.jpg" className="d-block w-100" alt="..." style={{height:window.innerWidth<786?"64vw":"35vw"}}/>
     </div>
   </div>
   <button className="carousel-control-prev" type="button" data-bs-target="#carouselExample1" data-bs-slide="prev">
@@ -781,7 +965,7 @@ const Home = () => {
     <span className="visually-hidden">Next</span>
   </button>
 </div>
-<button style={{height:"5.6vh",width:"48%",fontWeight:"800" ,backgroundColor:"rgb(190,147,46)",color:"white",border:"2px solid black",borderRadius:"12px",marginLeft:"25vw",marginTop:"5%"}}>For Customized Work Contact Us !</button>
+<button style={{height:"5.6vh",width:"48%",fontWeight:"800" ,backgroundColor:"rgb(190,147,46)",color:"white",border:"2px solid black",borderRadius:"12px",marginLeft:"25vw",marginTop:"5%"}}   onClick={handleWhatsAppClick}>For Customized Work Contact Us !</button>
       </div>  
       <MyCarousel/> 
     </div>

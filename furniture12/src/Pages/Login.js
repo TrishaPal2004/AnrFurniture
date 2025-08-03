@@ -111,6 +111,22 @@ const Login = () => {
           minLength={6}
         />
 
+        {/* Forgot Password Link */}
+        <div style={{ textAlign: 'right', marginTop: '5px' }}>
+          <span
+            style={{
+              color: '#00ffff',
+              fontSize: '14px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              textDecoration: 'underline',
+              pointerEvents: isLoading ? 'none' : 'auto'
+            }}
+            onClick={() => !isLoading && navigate('/forgot-password')}
+          >
+            Forgot Password?
+          </span>
+        </div>
+
         <button type="submit" disabled={isLoading} style={{
           padding: '12px',
           marginTop: '16px',

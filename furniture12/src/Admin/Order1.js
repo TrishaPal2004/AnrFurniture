@@ -123,59 +123,74 @@ const Order1 = () => {
 
   // Update order status via API with immediate UI update
   const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      console.log(orderId);
-      
-      // Update local state immediately (optimistic update)
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.orderId === orderId
-            ? { ...order, orderStatus: newStatus, updatedAt: new Date() }
-            : order
-        )
-      );
+  // Store the current status OUTSIDE try block for proper scope
+  const currentOrder = orders.find(order => order.orderId === orderId);
+  const previousStatus = currentOrder?.orderStatus;
+  
+  try {
+    console.log(orderId);
+    
+    // Update local state immediately (optimistic update)
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.orderId === orderId
+          ? { ...order, orderStatus: newStatus, updatedAt: new Date() }
+          : order
+      )
+    );
 
-      // Update selected order in modal if it's the same order
-      if (selectedOrder && selectedOrder.orderId === orderId) {
-        setSelectedOrder(prev => ({ ...prev, orderStatus: newStatus }));
-      }
-
-      // Make API call in background
-      const response = await fetch(`${API_BASE_URL}/order/${orderId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ orderStatus: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedOrder = await response.json();
-      console.log('Order updated successfully:', updatedOrder);
-
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      
-      // Revert the optimistic update on error
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.orderId === orderId
-            ? { ...order, orderStatus: order.orderStatus } // This won't work as intended
-            : order
-        )
-      );
-      
-      // Better error handling: fetch fresh data or show error message
-      alert('Failed to update order status. Please try again.');
-      
-      // Optionally refresh the data
-      fetchOrders();
+    // Update selected order in modal if it's the same order
+    if (selectedOrder && selectedOrder.orderId === orderId) {
+      setSelectedOrder(prev => ({ ...prev, orderStatus: newStatus }));
     }
-  };
 
+    // Make API call
+    const response = await fetch(`${API_BASE_URL}/order/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderStatus: newStatus })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Order updated successfully:', result);
+
+    // Optionally update with server response to ensure consistency
+    if (result.success && result.order) {
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.orderId === orderId ? { ...order, ...result.order } : order
+        )
+      );
+    }
+
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    
+    // Revert the optimistic update using the stored previous status
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.orderId === orderId
+          ? { ...order, orderStatus: previousStatus } // ✅ Now properly accessible
+          : order
+      )
+    );
+
+    // Revert selected order if needed
+    if (selectedOrder && selectedOrder.orderId === orderId) {
+      setSelectedOrder(prev => ({ ...prev, orderStatus: previousStatus }));
+    }
+
+    // Show user-friendly error message
+    alert(`Failed to update order status: ${error.message}`);
+  }
+};
   // Updated updateOrderStatus function in table
   const handleTableStatusChange = (order, newStatus) => {
     updateOrderStatus(order.orderId, newStatus);

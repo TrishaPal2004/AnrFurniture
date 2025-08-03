@@ -19,11 +19,40 @@ const AddtoCart = () => {
     return localStorage.getItem('token') !== null;
   };
 
+  const token = localStorage.getItem('token');
+
   // Get auth headers
   const getAuthHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${localStorage.getItem('token')}`
   });
+
+  // Helper function to get unit price (price per single item)
+  const getUnitPrice = (item) => {
+    if (item.minorderquantity && item.minorderquantity > 1) {
+      return item.price / item.minorderquantity;
+    }
+    return item.price;
+  };
+
+  // Helper function to calculate item total
+  const getItemTotal = (item) => {
+    const unitPrice = getUnitPrice(item);
+    return unitPrice * item.quantity;
+  };
+
+  // NEW: Enhanced validation function to check all items meet minimum quantity
+  const validateCartMinimumQuantities = () => {
+    const invalidItems = cart.filter(item => {
+      const minOrderQty = item.minorderquantity || 1;
+      return item.quantity < minOrderQty;
+    });
+    
+    return {
+      isValid: invalidItems.length === 0,
+      invalidItems: invalidItems
+    };
+  };
 
   // Fetch cart items from backend
   const fetchCartItems = async () => {
@@ -53,9 +82,29 @@ const AddtoCart = () => {
     }
   };
 
-  // Update quantity in backend and local state
+  // ENHANCED: Update quantity with stricter validation
   const updateQuantity = async (productId, newQuantity) => {
+    const item = cart.find(cartItem => 
+      cartItem.productId === productId || cartItem._id === productId
+    );
+    
+    if (!item) return;
+
+    const minOrderQty = item.minorderquantity;
+    console.log(minOrderQty);
+    // Prevent setting quantity below minimum
+    if (newQuantity > 0 && newQuantity < minOrderQty) {
+      toast.error(`Minimum order quantity for ${item.name} is ${minOrderQty}. Please order at least ${minOrderQty} units or remove the item completely.`);
+      return;
+    }
+
     if (newQuantity <= 0) {
+      // Show confirmation dialog for items with minimum quantity > 1
+      if (minOrderQty > 1) {
+        if (!window.confirm(`${item.name} has a minimum order quantity of ${minOrderQty}. Removing it will delete the entire item from your cart. Continue?`)) {
+          return;
+        }
+      }
       removeFromCart(productId);
       return;
     }
@@ -72,7 +121,6 @@ const AddtoCart = () => {
         throw new Error('Failed to update quantity');
       }
 
-      // Update local state
       setCart(cart.map(item => 
         item.productId === productId || item._id === productId
           ? { ...item, quantity: newQuantity }
@@ -101,7 +149,6 @@ const AddtoCart = () => {
         throw new Error('Failed to remove item');
       }
 
-      // Update local state
       setCart(cart.filter(item => 
         item.productId !== productId && item._id !== productId
       ));
@@ -115,25 +162,45 @@ const AddtoCart = () => {
     }
   };
 
-  // Calculate total price
+  // Calculate total price using corrected calculation
   const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => {
+      return total + getItemTotal(item);
+    }, 0);
   };
 
   // Calculate savings (if you have original price field)
   const calculateSavings = () => {
     return cart.reduce((savings, item) => {
-      const originalPrice = item.originalPrice || item.price * 1.2;
-      return savings + ((originalPrice - item.price) * item.quantity);
+      const unitPrice = getUnitPrice(item);
+      const originalUnitPrice = item.originalPrice ? 
+        (item.minorderquantity && item.minorderquantity > 1 ? 
+          item.originalPrice / item.minorderquantity : 
+          item.originalPrice) : 
+        unitPrice * 1.2;
+      
+      return savings + ((originalUnitPrice - unitPrice) * item.quantity);
     }, 0);
   };
 
-  // Proceed to checkout
+  // ENHANCED: Proceed to checkout with validation
   const proceedToCheckout = () => {
     if (cart.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
+
+    // Validate minimum quantities before proceeding
+    const validation = validateCartMinimumQuantities();
+    if (!validation.isValid) {
+      const itemNames = validation.invalidItems.map(item => 
+        `${item.name} (min: ${item.minorderquantity || 1}, current: ${item.quantity})`
+      ).join(', ');
+      
+      toast.error(`Please meet minimum order quantities for: ${itemNames}`);
+      return;
+    }
+
     setCurrentStep('checkout');
   };
 
@@ -148,7 +215,37 @@ const AddtoCart = () => {
     setSelectedPaymentMethod(e.target.value);
   };
 
-  // Confirm order
+  // Clear cart function
+  const clearCart = async () => {
+    console.log(token);
+    try {
+      console.log('Attempting to clear cart for user:', user?.id);
+      
+      const response = await fetch('https://anrfurniture-2.onrender.com/api/cart/clear', {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Server response:', result);
+        setCart([]);
+        console.log('Cart cleared successfully on both server and client');
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to clear cart on server:', response.status, errorText);
+        setCart([]);
+        return false;
+      }
+    } catch (clearError) {
+      console.error('Error clearing cart:', clearError);
+      setCart([]);
+      return false;
+    }
+  };
+
+  // ENHANCED: Confirm order with final validation
   const confirmOrder = async () => {
     if (!location.trim()) {
       toast.error('Please enter your location');
@@ -157,6 +254,18 @@ const AddtoCart = () => {
     
     if (!selectedPaymentMethod) {
       toast.error('Please select a payment method');
+      return;
+    }
+
+    // Final validation before order placement
+    const validation = validateCartMinimumQuantities();
+    if (!validation.isValid) {
+      const itemDetails = validation.invalidItems.map(item => 
+        `${item.name}: Current quantity ${item.quantity}, minimum required ${item.minorderquantity || 1}`
+      ).join('\n');
+      
+      toast.error(`Cannot place order. The following items don't meet minimum quantity requirements:\n${itemDetails}`);
+      setCurrentStep('cart');
       return;
     }
 
@@ -169,14 +278,23 @@ const AddtoCart = () => {
         userName: user.name,
         userPhone: user.phoneno,
         location: location,
-        items: cart.map(item => ({
-          productId: item.productId || item._id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          images: item.images,
-          material: item.material || '' // Include material field
-        })),
+        items: cart.map(item => {
+          const minOrderQty = item.minorderquantity || 1;
+          // Double-check each item before sending
+          if (item.quantity < minOrderQty) {
+            throw new Error(`${item.name} quantity (${item.quantity}) is below minimum (${minOrderQty})`);
+          }
+          
+          return {
+            productId: item.productId || item._id,
+            name: item.name,
+            price: getUnitPrice(item),
+            quantity: item.quantity,
+            images: item.images,
+            material: item.material || '',
+            minorderquantity: item.minorderquantity || 1
+          };
+        }),
         totalAmount: calculateTotal(),
         paymentMethod: selectedPaymentMethod
       };
@@ -186,7 +304,9 @@ const AddtoCart = () => {
         headers: getAuthHeaders(),
         body: JSON.stringify(orderData)
       });
-      console.log(orderData);
+      
+      console.log('Order data sent:', orderData);
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create order');
@@ -196,7 +316,7 @@ const AddtoCart = () => {
       
       setOrderDetails({
         orderId: order.orderId || order._id || 'OD' + Date.now(),
-        items: cart,
+        items: [...cart],
         total: calculateTotal(),
         savings: calculateSavings(),
         paymentMethod: selectedPaymentMethod,
@@ -205,23 +325,16 @@ const AddtoCart = () => {
         orderStatus: order.orderStatus || 'Pending'
       });
 
-      // Clear cart after successful order - you might want to call a clear cart API endpoint
-      try {
-        await fetch('https://anrfurniture-2.onrender.com/api/cart/clear', {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-      } catch (clearError) {
-        console.warn('Failed to clear cart on server:', clearError);
-      }
-      
-      setCart([]);
+      await clearCart();
       setCurrentStep('confirmation');
-      toast.success('Order placed successfully!');
+      setLoading(false);
+      toast.success('Order placed successfully! Your cart has been cleared.');
+      
     } catch (error) {
       console.error('Error confirming order:', error);
       toast.error(error.message || 'Failed to place order');
-      setCurrentStep('checkout'); // Go back to checkout on error
+      setCurrentStep('checkout');
+      setLoading(false);
     }
   };
 
@@ -230,228 +343,386 @@ const AddtoCart = () => {
     fetchCartItems();
   }, []);
 
-  // Cart Item Component
-  const CartItem = ({ item }) => (
-    <div style={{
-      display: 'flex',
-      padding: '16px',
-      borderBottom: '1px solid #e0e0e0',
-      backgroundColor: '#fff'
-    }}>
-      <img 
-        src={item.images?.[0] || item.image || '/placeholder-image.png'} 
-        alt={item.name}
-        style={{
-          width: '100px',
-          height: '100px',
-          objectFit: 'cover',
-          borderRadius: '8px',
-          marginRight: '16px'
-        }}
-        onError={(e) => {
-          e.target.src = '/placeholder-image.png';
-        }}
-      />
-      <div style={{ flex: 1 }}>
-        <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>{item.name}</h4>
-        <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>
-          {item.material || item.description || 'No description available'}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '18px', fontWeight: '600', marginRight: '8px' }}>
-            ₹{item.price.toLocaleString()}
-          </span>
-          {item.originalPrice && (
-            <span style={{ fontSize: '14px', color: '#666', textDecoration: 'line-through' }}>
-              ₹{item.originalPrice.toLocaleString()}
+  // ENHANCED: CartItem component with better UI indicators
+  const CartItem = ({ item }) => {
+    const unitPrice = getUnitPrice(item);
+    const itemTotal = getItemTotal(item);
+    const minOrderQty = item.minorderquantity;
+    
+    // Check if current quantity meets minimum requirement
+    const meetsMinimum = item.quantity >= minOrderQty;
+    const isAtMinimum = item.quantity === minOrderQty;
+    const canDecrease = item.quantity > minOrderQty;
+
+    return (
+      <div style={{
+        display: 'flex',
+        padding: '16px',
+        borderBottom: '1px solid #e0e0e0',
+        backgroundColor: meetsMinimum ? '#fff' : '#fff8f0',
+        border: meetsMinimum ? 'none' : '2px solid #ff6b35'
+      }}>
+        <img 
+          src={item.images?.[0] || item.image || '/placeholder-image.png'} 
+          alt={item.name}
+          style={{
+            width: '100px',
+            height: '100px',
+            objectFit: 'cover',
+            borderRadius: '8px',
+            marginRight: '16px'
+          }}
+          onError={(e) => {
+            e.target.src = '/placeholder-image.png';
+          }}
+        />
+        <div style={{ flex: 1 }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>{item.name}</h4>
+          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>
+            {item.material || item.description || 'No description available'}
+          </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '600', marginRight: '8px' }}>
+              ₹{unitPrice.toLocaleString()} per unit
             </span>
+            {minOrderQty > 1 && (
+              <span style={{ 
+                fontSize: '12px', 
+                color: '#fff', 
+                backgroundColor: meetsMinimum ? (isAtMinimum ? '#ff6b35' : '#4caf50') : '#f44336',
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                fontWeight: '600'
+              }}>
+                Min: {minOrderQty} {isAtMinimum && '(At Min)'} {!meetsMinimum && '(Below Min!)'}
+              </span>
+            )}
+          </div>
+
+          {/* Warning messages */}
+          {!meetsMinimum && (
+            <div style={{ 
+              color: '#f44336', 
+              fontSize: '14px', 
+              marginBottom: '8px',
+              fontWeight: '600',
+              backgroundColor: '#ffebee',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #f44336'
+            }}>
+              ⚠️ ATTENTION: Current quantity ({item.quantity}) is below minimum order quantity ({minOrderQty}). 
+              Please increase to at least {minOrderQty} units or remove this item.
+            </div>
+          )}
+
+          {isAtMinimum && minOrderQty > 1 && (
+            <div style={{ 
+              color: '#ff6b35', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+              fontWeight: '500'
+            }}>
+              ℹ️ At minimum order quantity. Cannot reduce further without removing item.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+              <button 
+                onClick={() => updateQuantity(item.productId || item._id, item.quantity - 1)}
+                disabled={loading || !canDecrease}
+                title={!canDecrease ? `Cannot go below minimum quantity of ${minOrderQty}` : 'Decrease quantity'}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  padding: '8px 12px',
+                  cursor: (loading || !canDecrease) ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  opacity: !canDecrease ? 0.3 : 1,
+                  color: !canDecrease ? '#ccc' : '#333'
+                }}
+              >
+                -
+              </button>
+              <span style={{ 
+                padding: '8px 16px', 
+                fontSize: '16px', 
+                fontWeight: '600',
+                color: !meetsMinimum ? '#f44336' : (isAtMinimum ? '#ff6b35' : '#333')
+              }}>
+                {item.quantity}
+              </span>
+              <button 
+                onClick={() => updateQuantity(item.productId || item._id, item.quantity + 1)}
+                disabled={loading}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  padding: '8px 12px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                +
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => {
+                if (minOrderQty > 1) {
+                  if (window.confirm(`This item has a minimum order quantity of ${minOrderQty}. Removing it will delete the entire item from your cart. Continue?`)) {
+                    removeFromCart(item.productId || item._id);
+                  }
+                } else {
+                  removeFromCart(item.productId || item._id);
+                }
+              }}
+              disabled={loading}
+              style={{
+                color: '#ff6b6b',
+                border: 'none',
+                background: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+            >
+              {loading ? 'REMOVING...' : 'REMOVE'}
+            </button>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '18px', fontWeight: '600' }}>
+            ₹{itemTotal.toLocaleString()}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            {item.quantity} × ₹{unitPrice.toLocaleString()}
+          </div>
+          {minOrderQty > 1 && (
+            <div style={{ 
+              fontSize: '10px', 
+              color: meetsMinimum ? '#999' : '#f44336', 
+              marginTop: '2px',
+              fontWeight: meetsMinimum ? 'normal' : '600'
+            }}>
+              Min qty: {minOrderQty}
+            </div>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
-            <button 
-              onClick={() => updateQuantity(item.productId || item._id, item.quantity - 1)}
-              disabled={loading}
-              style={{
-                border: 'none',
-                background: 'none',
-                padding: '8px 12px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '16px'
-              }}
-            >
-              -
-            </button>
-            <span style={{ padding: '8px 16px', fontSize: '16px', fontWeight: '600' }}>
-              {item.quantity}
-            </span>
-            <button 
-              onClick={() => updateQuantity(item.productId || item._id, item.quantity + 1)}
-              disabled={loading}
-              style={{
-                border: 'none',
-                background: 'none',
-                padding: '8px 12px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '16px'
-              }}
-            >
-              +
-            </button>
-          </div>
-          <button 
-            onClick={() => removeFromCart(item.productId || item._id)}
-            disabled={loading}
-            style={{
-              color: '#ff6b6b',
-              border: 'none',
-              background: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            {loading ? 'REMOVING...' : 'REMOVE'}
-          </button>
-        </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: '18px', fontWeight: '600' }}>
-          ₹{(item.price * item.quantity).toLocaleString()}
-        </div>
-        {item.originalPrice && (
-          <div style={{ fontSize: '12px', color: '#388e3c', marginTop: '4px' }}>
-            Saved ₹{((item.originalPrice - item.price) * item.quantity).toLocaleString()}
+    );
+  };
+
+  // NEW: Enhanced PLACE ORDER button with validation indicator
+  const PlaceOrderButton = () => {
+    const validation = validateCartMinimumQuantities();
+    const hasInvalidItems = !validation.isValid;
+    
+    return (
+      <div>
+        {hasInvalidItems && (
+          <div style={{
+            color: '#f44336',
+            fontSize: '14px',
+            marginBottom: '12px',
+            padding: '8px',
+            backgroundColor: '#ffebee',
+            borderRadius: '4px',
+            border: '1px solid #f44336'
+          }}>
+            ⚠️ Some items don't meet minimum order quantities. Please adjust quantities or remove items before placing order.
           </div>
         )}
+        
+        <button 
+          onClick={proceedToCheckout}
+          disabled={cart.length === 0 || hasInvalidItems}
+          style={{
+            backgroundColor: (cart.length === 0 || hasInvalidItems) ? '#ccc' : '#ff6b35',
+            color: 'white',
+            border: 'none',
+            padding: '16px',
+            borderRadius: '4px',
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: (cart.length === 0 || hasInvalidItems) ? 'not-allowed' : 'pointer',
+            width: '100%',
+            opacity: (cart.length === 0 || hasInvalidItems) ? 0.7 : 1
+          }}
+        >
+          {hasInvalidItems ? 'FIX QUANTITIES TO PLACE ORDER' : 'PLACE ORDER'}
+        </button>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Checkout Page Component
-  const CheckoutPage = () => (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '20px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h2 style={{ marginBottom: '20px' }}>Checkout</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-          <div>
-            <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3>Order Summary</h3>
-              {cart.map(item => (
-                <div key={item._id || item.productId} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  padding: '8px 0', 
-                  borderBottom: '1px solid #eee' 
-                }}>
-                  <span>{item.name} x {item.quantity}</span>
-                  <span>₹{(item.price * item.quantity).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-            
-           <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-  <h3>Delivery Address</h3>
-  <label htmlFor="location" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-    Enter your location:
-  </label>
-  <input
-    type="text"
-    id="location"
-    value={location}
-    onChange={(e) => setLocation(e.target.value)}
-    placeholder="e.g., Kolkata, India"
-    style={{
-      border: '1px solid #ccc',
-      borderRadius: '4px',
-      padding: '12px',
-      width: '100%',
-      fontSize: '16px'
-    }}
-  />
-  <button
-    type="button"
-    onClick={() => toast.success('Location saved')} // Or any other action you want
-    style={{
-      marginTop: '10px',
-      padding: '10px 20px',
-      backgroundColor: '#007bff',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      fontSize: '16px',
-      cursor: 'pointer'
-    }}
-  >
-    Save Location
-  </button>
-</div>
+  const CheckoutPage = () => {
+    const isMobile = window.innerWidth < 768;
 
+    return (
+      <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ marginBottom: '20px' }}>Checkout</h2>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '20px',
+            }}
+          >
+            <div style={{ flex: '2' }}>
+              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+                <h3>Order Summary</h3>
+                {cart.map((item) => (
+                  <div
+                    key={item._id || item.productId}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #eee',
+                    }}
+                  >
+                    <span>
+                      {item.name} x {item.quantity}
+                    </span>
+                    <span>₹{getItemTotal(item).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
 
-          </div>
-          
-          <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', height: 'fit-content' }}>
-            <h3>Payment Details</h3>
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Total MRP</span>
-                <span>₹{cart.reduce((sum, item) => sum + ((item.originalPrice || item.price * 1.2) * item.quantity), 0).toLocaleString()}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#388e3c' }}>
-                <span>Discount</span>
-                <span>-₹{calculateSavings().toLocaleString()}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Delivery Fee</span>
-                <span style={{ color: '#388e3c' }}>FREE</span>
-              </div>
-              <hr />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '600' }}>
-                <span>Total Amount</span>
-                <span>₹{calculateTotal().toLocaleString()}</span>
-              </div>
-            </div>
-            
-            <div style={{ marginBottom: '16px' }}>
-              <h4>Payment Method</h4>
-              {['Credit Card', 'Debit Card', 'UPI', 'Cash on Delivery'].map(method => (
-                <label key={method} style={{ display: 'block', marginBottom: '8px', cursor: 'pointer' }}>
-                  <input 
-                    type="radio" 
-                    name="payment" 
-                    value={method} 
-                    checked={selectedPaymentMethod === method}
-                    onChange={handlePaymentMethodChange}
-                    style={{ marginRight: '8px' }} 
-                  />
-                  {method}
+              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
+                <h3>Delivery Address</h3>
+                <label htmlFor="location" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Enter your location:
                 </label>
-              ))}
+                <input
+                  type="text"
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g., Kolkata, India"
+                  style={{
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    padding: '12px',
+                    width: '100%',
+                    fontSize: '16px',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => toast.success('Location saved')}
+                  style={{
+                    marginTop: '10px',
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Save Location
+                </button>
+              </div>
             </div>
-            
-            <button 
-              onClick={confirmOrder}
-              disabled={loading || !location.trim() || !selectedPaymentMethod}
+
+            <div
               style={{
-                backgroundColor: (loading || !location.trim() || !selectedPaymentMethod) ? '#ccc' : '#ff6b35',
-                color: 'white',
-                border: 'none',
-                padding: '16px',
-                borderRadius: '4px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: (loading || !location.trim() || !selectedPaymentMethod) ? 'not-allowed' : 'pointer',
-                width: '100%',
-                opacity: (loading || !location.trim() || !selectedPaymentMethod) ? 0.7 : 1
+                backgroundColor: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                flex: '1',
+                height: 'fit-content',
               }}
             >
-              {loading ? 'Processing...' : 'PLACE ORDER'}
-            </button>
+              <h3>Payment Details</h3>
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span>Total MRP</span>
+                  <span>
+                    ₹
+                    {cart
+                      .reduce((sum, item) => {
+                        const unitPrice = getUnitPrice(item);
+                        const originalUnitPrice = item.originalPrice
+                          ? item.minorderquantity && item.minorderquantity > 1
+                            ? item.originalPrice / item.minorderquantity
+                            : item.originalPrice
+                          : unitPrice * 1.2;
+                        return sum + originalUnitPrice * item.quantity;
+                      }, 0)
+                      .toLocaleString()}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                    color: '#388e3c',
+                  }}
+                >
+                  <span>Discount</span>
+                  <span>-₹{calculateSavings().toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span>Delivery Fee</span>
+                  <span style={{ color: '#388e3c' }}>FREE</span>
+                </div>
+                <hr />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '600' }}>
+                  <span>Total Amount</span>
+                  <span>₹{calculateTotal().toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <h4>Payment Method</h4>
+                {['Credit Card', 'Debit Card', 'UPI', 'Cash on Delivery'].map((method) => (
+                  <label key={method} style={{ display: 'block', marginBottom: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value={method}
+                      checked={selectedPaymentMethod === method}
+                      onChange={handlePaymentMethodChange}
+                      style={{ marginRight: '8px' }}
+                    />
+                    {method}
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={confirmOrder}
+                disabled={loading || !location.trim() || !selectedPaymentMethod}
+                style={{
+                  backgroundColor: loading || !location.trim() || !selectedPaymentMethod ? '#ccc' : '#ff6b35',
+                  color: 'white',
+                  border: 'none',
+                  padding: '16px',
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: loading || !location.trim() || !selectedPaymentMethod ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  opacity: loading || !location.trim() || !selectedPaymentMethod ? 0.7 : 1,
+                }}
+              >
+                {loading ? 'Processing...' : 'PLACE ORDER'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Payment Processing Component
   const PaymentProcessing = () => (
@@ -529,7 +800,7 @@ const AddtoCart = () => {
               borderBottom: '1px solid #eee'
             }}>
               <span>{item.name} x {item.quantity}</span>
-              <span>₹{(item.price * item.quantity).toLocaleString()}</span>
+              <span>₹{getItemTotal(item).toLocaleString()}</span>
             </div>
           ))}
           <div style={{ 
@@ -560,7 +831,12 @@ const AddtoCart = () => {
           You saved ₹{orderDetails?.savings.toLocaleString()} on this order!
         </p>
         <button 
-          onClick={() => navigate('/')}
+          onClick={() => {
+            navigate('/');
+            setTimeout(() => {
+              fetchCartItems();
+            }, 500);
+          }}
           style={{
             backgroundColor: '#2196f3',
             color: 'white',
@@ -647,7 +923,7 @@ const AddtoCart = () => {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+                <div style={{ display: 'flex', gridTemplateColumns: '2fr 1fr', flexDirection: "column" }}>
                   <div style={{ backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
                     {cart.map(item => (
                       <CartItem key={item._id || item.productId} item={item} />
@@ -658,7 +934,15 @@ const AddtoCart = () => {
                     <div style={{ marginBottom: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span>Price ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                        <span>₹{cart.reduce((sum, item) => sum + ((item.originalPrice || item.price * 1.2) * item.quantity), 0).toLocaleString()}</span>
+                        <span>₹{cart.reduce((sum, item) => {
+                          const unitPrice = getUnitPrice(item);
+                          const originalUnitPrice = item.originalPrice ? 
+                            (item.minorderquantity && item.minorderquantity > 1 ? 
+                              item.originalPrice / item.minorderquantity : 
+                              item.originalPrice) : 
+                            unitPrice * 1.2;
+                          return sum + (originalUnitPrice * item.quantity);
+                        }, 0).toLocaleString()}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#388e3c' }}>
                         <span>Discount</span>
@@ -677,23 +961,7 @@ const AddtoCart = () => {
                     <div style={{ color: '#388e3c', fontSize: '14px', marginBottom: '16px' }}>
                       You will save ₹{calculateSavings().toLocaleString()} on this order
                     </div>
-                    <button 
-                      onClick={proceedToCheckout}
-                      disabled={cart.length === 0}
-                      style={{
-                        backgroundColor: cart.length === 0 ? '#ccc' : '#ff6b35',
-                        color: 'white',
-                        border: 'none',
-                        padding: '16px',
-                        borderRadius: '4px',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                        width: '100%'
-                      }}
-                    >
-                      PLACE ORDER
-                    </button>
+                    <PlaceOrderButton />
                   </div>
                 </div>
               )}

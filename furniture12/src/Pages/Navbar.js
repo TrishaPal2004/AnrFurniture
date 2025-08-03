@@ -8,14 +8,17 @@ const Navbar = () => {
     <div
       style={{
         padding: "10px 20px",
-        backgroundColor: "white",
+        background: "transparent",
         display: "flex",
         width:"100%",
         justifyContent: "space-between",
         alignItems: "center",
       }}
     >
-      <h2 style={{ margin: 0,color:"black" }}>Anr Furniture</h2>
+ <img
+          src= "/logo.jpeg"
+          style={{ height: "7vh",backgroundRadius:"5px" }}
+        />
       
       {isLoggedIn ? (
         <div style={{ display: "flex", alignItems: "center", gap: "10px" ,color:"black"}}>

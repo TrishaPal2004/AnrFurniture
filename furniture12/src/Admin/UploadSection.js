@@ -271,6 +271,18 @@ const UploadSection = () => {
             />
           </div>
 
+           <div style={styles.formGroup}>
+            <label style={styles.formLabel}>Minimum Order Quantity</label>
+            <input
+              type="number"
+              name="minorderquantity"
+              value={pdtData.minorderquantity}
+              onChange={handleChange}
+              style={styles.formInput}
+              placeholder="0"
+            />
+          </div>
+
           <div style={styles.formGroup}>
             <label style={styles.formLabel}>Category</label>
             <select
@@ -291,6 +303,8 @@ const UploadSection = () => {
               <option value="Bookshelves">Bookshelves</option>
               <option value="Shoe Racks">Shoe Racks</option>
               <option value="Deal Zone">Deal Zone</option>
+              <option value="Bulk Order">Bulk Order</option>
+              <option value="UI Services">UI Services</option>
             </select>
           </div>
         </div>
