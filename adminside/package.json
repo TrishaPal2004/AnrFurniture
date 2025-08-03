@@ -20,7 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.525.0",
     "mongoose": "^8.16.4",
-    "react-3d-carousel": "^0.0.6"
+    "react-3d-carousel": "^0.0.6",
+    "twilio": "^5.8.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
