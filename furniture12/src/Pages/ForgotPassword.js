@@ -1,53 +1,93 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import emailjs from '@emailjs/browser';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: New Password
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [otpToken, setOtpToken] = useState(''); // Store OTP token from backend
+  const [generatedOTP, setGeneratedOTP] = useState(''); // Store generated OTP
+  const [otpExpiry, setOtpExpiry] = useState(null); // Store OTP expiry time
 
-  // Step 1: Send OTP to phone
+  // EmailJS configuration
+  const EMAILJS_SERVICE_ID ="service_504jiho"; // Replace with your EmailJS service ID
+  const EMAILJS_TEMPLATE_ID = "service_504jiho"; // Replace with your EmailJS template ID
+  const EMAILJS_PUBLIC_KEY = "aTOq6h_cUzPy7UMW5"; // Replace with your EmailJS public key
+
+  // Generate 6-digit OTP
+  const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  // Format expiry time
+  const formatExpiryTime = (date) => {
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Step 1: Send OTP to email
   const handleSendOTP = async (e) => {
     e.preventDefault();
     
-    if (!phone) {
-      toast.error('Please enter your phone number');
+    if (!email) {
+      toast.error('Please enter your email address');
       return;
     }
 
-    // Clean phone number for validation
-    const phoneWithCode = "+91" + phone.trim(); 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
 
     try {
       setIsLoading(true);
       toast.loading('Sending OTP...', { id: 'otp' });
 
-      const response = await fetch('https://anrfurniture-2.onrender.com/api/user/forgot-password-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: phoneWithCode }), // Send clean phone number
-      });
+      // Generate OTP and expiry time
+      const newOTP = generateOTP();
+      const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+      
+      setGeneratedOTP(newOTP);
+      setOtpExpiry(expiryTime);
 
-      const data = await response.json();
+      // Prepare email template parameters
+      const templateParams = {
+        to_email: email,
+        passcode: newOTP,
+        time: formatExpiryTime(expiryTime),
+        to_name: email.split('@')[0], // Use email username as name
+      };
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send OTP');
+      // Send email using EmailJS
+      const response = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+
+      if (response.status === 200) {
+        toast.success('OTP sent to your email!', { id: 'otp' });
+        setStep(2);
+      } else {
+        throw new Error('Failed to send email');
       }
-
-      setOtpToken(data.otpToken); // Store the OTP token
-      toast.success('OTP sent to your phone!', { id: 'otp' });
-      setStep(2);
     } catch (error) {
       console.error('Send OTP error:', error);
-      toast.error(error.message || 'Failed to send OTP', { id: 'otp' });
+      toast.error('Failed to send OTP. Please try again.', { id: 'otp' });
     } finally {
       setIsLoading(false);
     }
@@ -62,32 +102,26 @@ const ForgotPassword = () => {
       return;
     }
 
+    // Check if OTP has expired
+    if (otpExpiry && new Date() > otpExpiry) {
+      toast.error('OTP has expired. Please request a new one.');
+      setStep(1);
+      setGeneratedOTP('');
+      setOtpExpiry(null);
+      return;
+    }
+
     try {
       setIsLoading(true);
       toast.loading('Verifying OTP...', { id: 'verify' });
 
-      const cleanPhone = phone.replace(/\D/g, '');
-
-      const response = await fetch('https://anrfurniture-2.onrender.com/api/user/verify-otp-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          phone: cleanPhone, 
-          otp, 
-          otpToken 
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Invalid OTP');
+      // Verify OTP (client-side for demo - in production, verify on server)
+      if (otp === generatedOTP) {
+        toast.success('OTP verified successfully!', { id: 'verify' });
+        setStep(3);
+      } else {
+        throw new Error('Invalid OTP');
       }
-
-      toast.success('OTP verified successfully!', { id: 'verify' });
-      setStep(3);
     } catch (error) {
       console.error('Verify OTP error:', error);
       toast.error(error.message || 'Invalid OTP', { id: 'verify' });
@@ -114,17 +148,16 @@ const ForgotPassword = () => {
       setIsLoading(true);
       toast.loading('Resetting password...', { id: 'reset' });
 
-      const cleanPhone = phone.replace(/\D/g, '');
-
-      const response = await fetch('https://anrfurniture-2.onrender.com/api/user/reset-password-sms', {
+      // Here you would typically make an API call to your backend to reset the password
+      // For demo purposes, we'll simulate the API call
+      const response = await fetch('https://anrfurniture-2.onrender.com/api/user/reset-password-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          phone: cleanPhone, 
-          newPassword, 
-          otpToken 
+          email: email, 
+          newPassword
         }),
       });
 
@@ -143,7 +176,6 @@ const ForgotPassword = () => {
       setIsLoading(false);
     }
   };
-
 
   const inputStyle = {
     padding: '12px',
@@ -185,7 +217,7 @@ const ForgotPassword = () => {
         width: '400px',
         maxWidth: '90vw',
       }}>
-        {/* Step 1: Phone Input */}
+        {/* Step 1: Email Input */}
         {step === 1 && (
           <form onSubmit={handleSendOTP}>
             <h2 style={{
@@ -195,14 +227,14 @@ const ForgotPassword = () => {
             }}>Forgot Password</h2>
             
             <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-              Enter your phone number and we'll send you an OTP to reset your password.
+              Enter your email address and we'll send you an OTP to reset your password.
             </p>
 
             <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter your phone number (1234567890)"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
               style={inputStyle}
               disabled={isLoading}
               required
@@ -236,8 +268,19 @@ const ForgotPassword = () => {
             }}>Verify OTP</h2>
             
             <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-              Enter the 6-digit OTP sent to {phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}
+              Enter the 6-digit OTP sent to {email}
             </p>
+
+            {otpExpiry && (
+              <p style={{ 
+                textAlign: 'center', 
+                color: '#ff6b6b', 
+                fontSize: '14px', 
+                marginBottom: '10px' 
+              }}>
+                OTP expires at {formatExpiryTime(otpExpiry)}
+              </p>
+            )}
 
             <input
               type="text"
@@ -268,9 +311,13 @@ const ForgotPassword = () => {
                   cursor: 'pointer',
                   textDecoration: 'underline'
                 }}
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  setStep(1);
+                  setGeneratedOTP('');
+                  setOtpExpiry(null);
+                }}
               >
-                Change Phone
+                Change Email
               </span>
               
               <span
