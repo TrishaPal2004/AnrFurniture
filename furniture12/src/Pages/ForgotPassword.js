@@ -16,7 +16,7 @@ const ForgotPassword = () => {
 
   // EmailJS configuration
   const EMAILJS_SERVICE_ID ="service_504jiho"; // Replace with your EmailJS service ID
-  const EMAILJS_TEMPLATE_ID = "service_504jiho"; // Replace with your EmailJS template ID
+  const EMAILJS_TEMPLATE_ID = "template_qqfpfni"; // Replace with your EmailJS template ID
   const EMAILJS_PUBLIC_KEY = "aTOq6h_cUzPy7UMW5"; // Replace with your EmailJS public key
 
   // Generate 6-digit OTP
