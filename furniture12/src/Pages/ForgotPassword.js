@@ -157,7 +157,8 @@ const ForgotPassword = () => {
         },
         body: JSON.stringify({ 
           email: email, 
-          newPassword
+          newPassword,
+          otpToken:otp
         }),
       });
 

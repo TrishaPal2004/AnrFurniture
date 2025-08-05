@@ -434,7 +434,10 @@ router.post('/reset-password-email', async (req, res) => {
     console.log('Request body:', req.body);
     
     const { email, newPassword, otpToken } = req.body;
-
+    
+    console.log("Email is",email);
+    console.log("NewPassword", newPassword);
+    console.log("OTP Token",otpToken);
     if (!email || !newPassword || !otpToken) {
       return res.status(400).json({ error: 'Email, new password, and token are required' });
     }
