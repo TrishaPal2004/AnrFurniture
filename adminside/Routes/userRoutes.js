@@ -39,7 +39,8 @@ router.post("/signup", async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         phoneno: newUser.phoneno,
-        role:newUser.role
+        role:newUser.role,
+        address: newUser.address, 
       },
     });
   } catch (err) {
@@ -91,6 +92,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         phoneno: user.phoneno,
         role: user.role,
+        address: user.address,
       },
     });
   } catch (error) {

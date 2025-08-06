@@ -17,11 +17,15 @@ import Productslog from './Admin/Productslog.js';
 import Searchbar from './Pages/Searchbar.js'
 import ForgotPassword from './Pages/ForgotPassword.js';
 import Location from './Pages/Locationch.js';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const App = () => {
   return (
     <AuthProvider>
      
         <BrowserRouter>
+        <ToastContainer position="top-center" />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<HeroAdminPanel />} />

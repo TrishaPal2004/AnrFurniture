@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {useAuth} from '../context/AuthContext.js'
 import Navbar from './Navbar.js';
 import {ShoppingCart} from "lucide-react";
-
+import {toast} from 'react-toastify';
 const Pdts = () => {
     const { isLoggedIn, user, logout } = useAuth();
     console.log(user);
@@ -82,11 +82,11 @@ const token = localStorage.getItem("token");
       const data = await response.json();
       console.log("Cart Check Response:", data);
       if (data.exists) {
-        alert("Item already in cart.");
+        toast.info("Item already in cart.");
       }
     } catch (error) {
       console.error("Error checking cart:", error);
-      alert("Error checking cart: " + error.message);
+      toast.error("Error checking cart: " + error.message);
     }
   };
 
@@ -121,14 +121,14 @@ const token = localStorage.getItem("token");
     console.log(pdt.minorderquantity);
     
     if (response.ok) {
-      alert("Product added to cart successfully!");
+      toast.success("Product added to cart successfully!");
       setCartItems(prev => [...prev, pdt._id]);
     } else {
-      alert("Failed to add product to cart.");
+      toast.error("Failed to add product to cart.");
     }
   } catch (error) {
     console.error("Error adding to cart:", error);
-    alert("Error adding product to cart.");
+    toast.error("Error adding product to cart.");
   }
 };
 

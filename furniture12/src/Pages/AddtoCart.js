@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext.js';
 
 const AddtoCart = () => {
@@ -591,7 +591,7 @@ const AddtoCart = () => {
 
               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
                
-               <p>Delivering to: {user?.address || "Unknown"}</p>
+               <p>Delivering to: {user.name}</p>
                 
                <button
   type="button"
