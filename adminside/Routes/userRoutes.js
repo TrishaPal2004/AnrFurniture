@@ -532,7 +532,7 @@ router.post("/change-location", async (req, res) => {
   try {
     const user = await User.findOneAndUpdate(
       { email },
-      { address: newAddress },
+       { $set: { address: newAddress } },
       { new: true }
     );
 

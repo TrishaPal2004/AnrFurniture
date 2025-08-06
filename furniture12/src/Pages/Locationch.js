@@ -19,7 +19,7 @@ const Location = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/user/change-location", {
+      const res = await fetch("https://anrfurniture-2.onrender.com/api/user/change-location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
