@@ -591,7 +591,7 @@ const AddtoCart = () => {
 
               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
                
-               <p>Delivering to: {user.name}</p>
+               <p>Delivering to: {user.address}</p>
                 
                <button
   type="button"
