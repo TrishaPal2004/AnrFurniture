@@ -14,10 +14,11 @@ const Navbar = () => {
         justifyContent: "space-between",
         alignItems: "center",
       }}
+     
     >
  <img
           src= "/logo.jpeg"
-          style={{ height: "7vh",backgroundRadius:"5px" }}
+          style={{ height: "4vw",backgroundRadius:"5px" }}  onClick={()=>{navigate("/")}}
         />
       
       {isLoggedIn ? (
@@ -36,6 +37,9 @@ const Navbar = () => {
           >
             Logout
           </button>
+          {user?.role === "admin" && (
+  <button style={{ marginLeft: "8px", color: "orange" ,zIndex:"12"}} onClick={()=>navigate("/hero")}>Admin</button>
+)}
         </div>
       ) : (
         <a

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import Navbar from './Navbar';
 
 const TrackOrder = () => {
   const { user } = useAuth();
@@ -75,6 +76,8 @@ const TrackOrder = () => {
   };
 
   return (
+    <div>
+      <Navbar/>
     <div
       style={{
         padding:"4vw",
@@ -140,9 +143,9 @@ const TrackOrder = () => {
                           key={idx}
                           style={{
                             width: '9vw',
-                            height: '2vw',
-                            borderRadius: '50%',
-                            border: '1px solid white',
+                            height: '4vw',
+                            borderRadius: '20%',
+                            border: '2px solid white',
                             objectFit: 'cover',
                             marginLeft: idx > 0 ? '-8px' : '0',
                           }}
@@ -211,6 +214,7 @@ const TrackOrder = () => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };

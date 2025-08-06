@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./style.css";
-import { Search, MessageCircleQuestion, Menu, X } from "lucide-react";
+import { Search, MessageCircleQuestion, Menu, X ,FaUserShield } from "lucide-react";
 import MyCarousel from "../components/MyCarousel";
 import Pdts from "./Pdts.js";
 import { useAuth } from "../context/AuthContext.js";
@@ -10,15 +10,22 @@ const Home = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {isLoggedIn,user,logout}=useAuth();
   useEffect(() => {
-    // Fetch all hero sections on load - KEEPING YOUR ORIGINAL API CALL
-    fetch("https://anrfurniture-2.onrender.com/api/hero")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch hero sections");
-        return res.json();
-      })
-      .then((data) => setHeroSections(data))
-      .catch((err) => console.error("Hero fetch error:", err));
-  }, []);
+  // Now uses your cached Vercel API route ✅
+  fetch("/api/hero")
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to fetch hero sections");
+      return res.json();
+    })
+    .then((data) => setHeroSections(data))
+    .catch((err) => {
+      console.error("Hero fetch error:", err);
+      // Optional: Fallback to direct API call if cached route fails
+      fetch("https://anrfurniture-2.onrender.com/api/hero")
+        .then(res => res.json())
+        .then(data => setHeroSections(data))
+        .catch(fallbackErr => console.error("Fallback failed:", fallbackErr));
+    });
+}, []);
 
 
 const handleWhatsAppClick = () => {
@@ -344,6 +351,9 @@ const handleWhatsAppClick = () => {
             <button style={{ background: "transparent", border: "none", outline: "none", paddingLeft: "5vh", color: "white", cursor: "pointer" }} onClick={handleWhatsAppClick}>
               <MessageCircleQuestion size={22} />
             </button>
+              {user?.role === "admin" && (
+  <button style={{ marginLeft: "8px", color: "orange" ,zIndex:"12"}} onClick={()=>navigate("/hero")}>Admin</button>
+)}
           </div>
         </div>)}
 
@@ -475,7 +485,7 @@ const handleWhatsAppClick = () => {
           Logout
         </span>
       )}
-
+  
       <button
         style={{
           background: "transparent",
@@ -487,6 +497,9 @@ const handleWhatsAppClick = () => {
       >
         <MessageCircleQuestion size={22} />
       </button>
+        {user?.role === "admin" && (
+  <button style={{ marginLeft: "8px", color: "orange" ,zIndex:"12"}} onClick={()=>navigate("/hero")}>Admin</button>
+)}
     </div>
   </div>
 </div>)}

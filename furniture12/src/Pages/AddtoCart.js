@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.js';
 
 const AddtoCart = () => {
-  const { isLoggedin, user, logout } = useAuth();
+  const { isLoggedin, user,setUser, logout } = useAuth();
   const [cart, setCart] = useState([]);
   const [currentStep, setCurrentStep] = useState('cart');
   const [orderDetails, setOrderDetails] = useState(null);
@@ -246,11 +246,7 @@ const AddtoCart = () => {
 
   // ENHANCED: Confirm order with final validation
   const confirmOrder = async () => {
-    if (!location.trim()) {
-      toast.error('Please enter your location');
-      return;
-    }
-    
+   
     if (!selectedPaymentMethod) {
       toast.error('Please select a payment method');
       return;
@@ -276,7 +272,7 @@ const AddtoCart = () => {
         userId: user.id,
         userName: user.name,
         userPhone: user.phoneno,
-        location: location,
+        location: user.address,
         items: cart.map(item => {
           const minOrderQty = item.minorderquantity || 1;
           // Double-check each item before sending
@@ -668,7 +664,7 @@ const AddtoCart = () => {
 
               <div style={{ marginBottom: '16px' }}>
                 <h4>Payment Method</h4>
-                {['Credit Card', 'Debit Card', 'UPI', 'Cash on Delivery'].map((method) => (
+                {['Cash on Delivery'].map((method) => (
                   <label key={method} style={{ display: 'block', marginBottom: '8px', cursor: 'pointer' }}>
                     <input
                       type="radio"
@@ -685,18 +681,18 @@ const AddtoCart = () => {
 
               <button
                 onClick={confirmOrder}
-                disabled={loading || !location.trim() || !selectedPaymentMethod}
+              
                 style={{
-                  backgroundColor: loading || !location.trim() || !selectedPaymentMethod ? '#ccc' : '#ff6b35',
+                  backgroundColor: loading || !selectedPaymentMethod ? '#ccc' : '#ff6b35',
                   color: 'white',
                   border: 'none',
                   padding: '16px',
                   borderRadius: '4px',
                   fontSize: '16px',
                   fontWeight: '600',
-                  cursor: loading || !location.trim() || !selectedPaymentMethod ? 'not-allowed' : 'pointer',
+                  cursor:  !selectedPaymentMethod ? 'not-allowed' : 'pointer',
                   width: '100%',
-                  opacity: loading || !location.trim() || !selectedPaymentMethod ? 0.7 : 1,
+                  opacity: !selectedPaymentMethod ? 0.7 : 1,
                 }}
               >
                 {loading ? 'Processing...' : 'PLACE ORDER'}

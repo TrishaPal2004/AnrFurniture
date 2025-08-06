@@ -8,6 +8,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { name, email, token }
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+
+  // Auto-sync user to localStorage whenever it changes
+useEffect(() => {
+  if (user) {
+    localStorage.setItem("user", JSON.stringify(user));
+  }
+}, [user]);
+
   // Check localStorage on load
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -46,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     isLoggedIn,
     signup, // exposed to Signup.js
     login,
