@@ -13,16 +13,14 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedOTP, setGeneratedOTP] = useState(''); // Store generated OTP
   const [otpExpiry, setOtpExpiry] = useState(null); // Store OTP expiry time
+const [otpToken, setOtpToken] = useState('');
 
   // EmailJS configuration
   const EMAILJS_SERVICE_ID ="service_504jiho"; // Replace with your EmailJS service ID
   const EMAILJS_TEMPLATE_ID = "template_qqfpfni"; // Replace with your EmailJS template ID
   const EMAILJS_PUBLIC_KEY = "aTOq6h_cUzPy7UMW5"; // Replace with your EmailJS public key
 
-  // Generate 6-digit OTP
-  const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
+  
 
   // Format expiry time
   const formatExpiryTime = (date) => {
@@ -37,98 +35,81 @@ const ForgotPassword = () => {
   };
 
   // Step 1: Send OTP to email
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    
-    if (!email) {
-      toast.error('Please enter your email address');
-      return;
+const handleSendOTP = async (e) => {
+  e.preventDefault();
+
+  if (!email) return toast.error('Please enter your email');
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return toast.error('Invalid email format');
+
+  try {
+    setIsLoading(true);
+    toast.loading('Sending OTP...', { id: 'otp' });
+
+    const response = await fetch("https://anrfurniture-2.onrender.com/api/user/forgot-password-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setOtpToken(data.otpToken); // ✅ Store the actual token
+      setStep(2);
+      toast.success('OTP sent to your email!', { id: 'otp' });
+    } else {
+      toast.error(data.error || 'Failed to send OTP', { id: 'otp' });
     }
+  } catch (err) {
+    console.error(err);
+    toast.error('Server error. Please try again.', { id: 'otp' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error('Please enter a valid email address');
-      return;
+const handleVerifyOTP = async (e) => {
+  e.preventDefault();
+
+  if (!otp || otp.length !== 6) {
+    toast.error('Please enter a valid 6-digit OTP');
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    toast.loading('Verifying OTP...', { id: 'verify' });
+
+    const response = await fetch('https://anrfurniture-2.onrender.com/api/user/verify-otp-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        otp,
+        otpToken,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      toast.success('OTP verified successfully!', { id: 'verify' });
+      setStep(3);
+    } else {
+      throw new Error(data.error || 'Failed to verify OTP');
     }
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    toast.error(error.message || 'Failed to verify OTP', { id: 'verify' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    try {
-      setIsLoading(true);
-      toast.loading('Sending OTP...', { id: 'otp' });
-
-      // Generate OTP and expiry time
-      const newOTP = generateOTP();
-      const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
-      
-      setGeneratedOTP(newOTP);
-      setOtpExpiry(expiryTime);
-
-      // Prepare email template parameters
-      const templateParams = {
-        to_email: email,
-        passcode: newOTP,
-        time: formatExpiryTime(expiryTime),
-        to_name: email.split('@')[0], // Use email username as name
-      };
-
-      // Send email using EmailJS
-      const response = await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      );
-
-      if (response.status === 200) {
-        toast.success('OTP sent to your email!', { id: 'otp' });
-        setStep(2);
-      } else {
-        throw new Error('Failed to send email');
-      }
-    } catch (error) {
-      console.error('Send OTP error:', error);
-      toast.error('Failed to send OTP. Please try again.', { id: 'otp' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 2: Verify OTP
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    
-    if (!otp || otp.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    // Check if OTP has expired
-    if (otpExpiry && new Date() > otpExpiry) {
-      toast.error('OTP has expired. Please request a new one.');
-      setStep(1);
-      setGeneratedOTP('');
-      setOtpExpiry(null);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      toast.loading('Verifying OTP...', { id: 'verify' });
-
-      // Verify OTP (client-side for demo - in production, verify on server)
-      if (otp === generatedOTP) {
-        toast.success('OTP verified successfully!', { id: 'verify' });
-        setStep(3);
-      } else {
-        throw new Error('Invalid OTP');
-      }
-    } catch (error) {
-      console.error('Verify OTP error:', error);
-      toast.error(error.message || 'Invalid OTP', { id: 'verify' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Step 3: Reset Password
   const handleResetPassword = async (e) => {
@@ -158,7 +139,7 @@ const ForgotPassword = () => {
         body: JSON.stringify({ 
           email: email, 
           newPassword,
-          otpToken:otp
+          otpToken
         }),
       });
 

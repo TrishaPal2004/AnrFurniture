@@ -26,7 +26,6 @@ router.post('/create', async (req, res) => {
       userName,
       userPhone,
       location,
-      deliveryAddress,
       items,
       totalAmount,
       paymentMethod
@@ -76,7 +75,6 @@ router.post('/create', async (req, res) => {
       userName,
       userPhone,
       location,
-      deliveryAddress: deliveryAddress || location,
       items,
       totalAmount,
       paymentMethod,

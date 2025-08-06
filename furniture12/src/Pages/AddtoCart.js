@@ -206,7 +206,6 @@ const AddtoCart = () => {
 
   // Handle location input
   const handleLocationChange = (e) => {
-    e.preventDefault();
     setLocation(e.target.value);
   };
 
@@ -595,40 +594,25 @@ const AddtoCart = () => {
               </div>
 
               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
-                <h3>Delivery Address</h3>
-                <label htmlFor="location" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Enter your location:
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g., Kolkata, India"
-                  style={{
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    padding: '12px',
-                    width: '100%',
-                    fontSize: '16px',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => toast.success('Location saved')}
-                  style={{
-                    marginTop: '10px',
-                    padding: '10px 20px',
-                    backgroundColor: '#007bff',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Location
-                </button>
+               
+               <p>Delivering to: {user?.address || "Unknown"}</p>
+                
+               <button
+  type="button"
+  onClick={()=>{navigate("/location")}}
+  style={{
+    marginTop: '10px',
+    padding: '10px 20px',
+    backgroundColor: '#007bff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '16px',
+    cursor: 'pointer',
+  }}
+>
+  Update Location
+</button>
               </div>
             </div>
 
