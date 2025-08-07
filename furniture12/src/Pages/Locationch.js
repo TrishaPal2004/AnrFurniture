@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 
 const Location = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    newLocation: ''
+    houseNo: '',
+    road: '',
+    landmark: '',
+    pincode: ''
   });
 
   const [message, setMessage] = useState('');
@@ -21,6 +23,9 @@ const Location = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newLocation = `${formData.houseNo}, ${formData.road}, ${formData.landmark ? formData.landmark + ', ' : ''}Pincode: ${formData.pincode}`;
+
     try {
       const res = await fetch("https://anrfurniture-2.onrender.com/api/user/change-location", {
         method: "POST",
@@ -29,7 +34,7 @@ const Location = () => {
         },
         body: JSON.stringify({
           email: user.email,
-          newAddress: formData.newLocation,
+          newAddress: newLocation,
         }),
       });
 
@@ -38,16 +43,14 @@ const Location = () => {
       if (data.success) {
         setMessage("✅ Location updated successfully!");
 
-        // ✅ update the user in AuthContext
         setUser(prev => ({
           ...prev,
-          address: formData.newLocation
+          address: newLocation
         }));
 
-        // ✅ navigate to cart page after short delay
         setTimeout(() => {
           navigate("/cart");
-        }, 1000); // wait 1s to show message (optional)
+        }, 1000);
       } else {
         setMessage("❌ Update failed.");
       }
@@ -55,6 +58,27 @@ const Location = () => {
       console.error("Submission error:", error);
       setMessage("⚠️ Error submitting form.");
     }
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "1rem 1rem 1rem 3rem",
+    fontSize: "1rem",
+    border: "2px solid #e2e8f0",
+    borderRadius: "12px",
+    outline: "none",
+    transition: "all 0.3s ease",
+    backgroundColor: "#f8fafc",
+    boxSizing: "border-box"
+  };
+
+  const iconStyle = {
+    position: "absolute",
+    left: "1rem",
+    top: "50%",
+    transform: "translateY(-50%)",
+    fontSize: "1.1rem",
+    color: "#a0aec0"
   };
 
   return (
@@ -76,7 +100,7 @@ const Location = () => {
         position: "relative",
         overflow: "hidden"
       }}>
-        {/* Decorative background elements */}
+        {/* Decorative background */}
         <div style={{
           position: "absolute",
           top: "-50px",
@@ -135,50 +159,37 @@ const Location = () => {
           flexDirection: "column",
           gap: "1.5rem"
         }}>
-
-          <div style={{ position: "relative" }}>
-            <input
-              type="text"
-              name="newLocation"
-              placeholder="Enter new address"
-              value={formData.newLocation}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "1rem 1rem 1rem 3rem",
-                fontSize: "1rem",
-                border: "2px solid #e2e8f0",
-                borderRadius: "12px",
-                outline: "none",
-                transition: "all 0.3s ease",
-                backgroundColor: "#f8fafc",
-                boxSizing: "border-box"
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#667eea";
-                e.target.style.backgroundColor = "white";
-                e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#e2e8f0";
-                e.target.style.backgroundColor = "#f8fafc";
-                e.target.style.boxShadow = "none";
-              }}
-            />
-            <div style={{
-              position: "absolute",
-              left: "1rem",
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: "1.1rem",
-              color: "#a0aec0"
-            }}>
-              🏠
+          {[
+            { name: "houseNo", placeholder: "House No.", icon: "🏠" },
+            { name: "road", placeholder: "Road / Street", icon: "🛣️" },
+            { name: "landmark", placeholder: "Landmark (optional)", icon: "📍" },
+            { name: "pincode", placeholder: "Pincode", icon: "📫" }
+          ].map(({ name, placeholder, icon }) => (
+            <div key={name} style={{ position: "relative" }}>
+              <input
+                type="text"
+                name={name}
+                placeholder={placeholder}
+                value={formData[name]}
+                onChange={handleChange}
+                required={name !== "landmark"}
+                style={inputStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#667eea";
+                  e.target.style.backgroundColor = "white";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e2e8f0";
+                  e.target.style.backgroundColor = "#f8fafc";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+              <div style={iconStyle}>{icon}</div>
             </div>
-          </div>
+          ))}
 
-          <button 
+          <button
             type="submit"
             style={{
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
