@@ -89,7 +89,7 @@ const ContactSection = () => {
       <div style={rightStyle}>
         <div style={videoFrameStyle}>
           <video
-            src="./video.mp4"
+            src="./Wood.mp4"
             controls
             style={videoStyle}
             poster="./tt.jpg"
