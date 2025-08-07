@@ -28,7 +28,7 @@ const Location = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.email,
+          email: user.email,
           newAddress: formData.newLocation,
         }),
       });
@@ -135,47 +135,6 @@ const Location = () => {
           flexDirection: "column",
           gap: "1.5rem"
         }}>
-          <div style={{ position: "relative" }}>
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "1rem 1rem 1rem 3rem",
-                fontSize: "1rem",
-                border: "2px solid #e2e8f0",
-                borderRadius: "12px",
-                outline: "none",
-                transition: "all 0.3s ease",
-                backgroundColor: "#f8fafc",
-                boxSizing: "border-box"
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#667eea";
-                e.target.style.backgroundColor = "white";
-                e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#e2e8f0";
-                e.target.style.backgroundColor = "#f8fafc";
-                e.target.style.boxShadow = "none";
-              }}
-            />
-            <div style={{
-              position: "absolute",
-              left: "1rem",
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: "1.1rem",
-              color: "#a0aec0"
-            }}>
-              ✉️
-            </div>
-          </div>
 
           <div style={{ position: "relative" }}>
             <input

@@ -792,7 +792,7 @@ const AddtoCart = () => {
             borderTop: '2px solid #eee',
             marginTop: '12px'
           }}>
-            <span>Total Paid</span>
+            <span>Total to be Paid</span>
             <span>₹{orderDetails?.total.toLocaleString()}</span>
           </div>
         </div>
