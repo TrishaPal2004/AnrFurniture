@@ -836,184 +836,186 @@ const Order1 = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody style={{ backgroundColor: 'white' }}>
-                {filteredOrders.map((order) => (
-                  <tr key={order._id} style={{
-                    borderTop: '1px solid #e5e7eb'
-                  }}>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          color: '#111827'
-                        }}>{order.orderId}</div>
-                        <div style={{
-                          fontSize: '14px',
-                          color: '#6b7280'
-                        }}>{order.paymentMethod}</div>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          color: '#111827'
-                        }}>{order.userName}</div>
-                        <div style={{
-                          fontSize: '14px',
-                          color: '#6b7280'
-                        }}>{order.userPhone}</div>
-                        <div style={{
-                          fontSize: '14px',
-                          color: '#6b7280'
-                        }}>{order.location}</div>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{
-                          display: 'flex',
-                          marginRight: '5px'
-                        }}>
-                          {order.items && order.items.slice(0, 3).map((item, idx) => (
-                            <img
-                              key={idx}
-                              style={{
-                                width: '9vw',
-                                height: '2vw',
-                                borderRadius: '50%',
-                                border: '1px solid white',
-                                objectFit: 'cover',
-                                marginLeft: idx > 0 ? '-8px' : '0'
-                              }}
-                              src={item.images[0]}
-                            />
-                          ))}
-                          {order.items && order.items.length > 3 && (
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '50%',
-                              backgroundColor: '#e5e7eb',
-                              border: '2px solid white',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginLeft: '-8px'
-                            }}>
-                              <span style={{
-                                fontSize: '12px',
-                                color: '#6b7280'
-                              }}>+{order.items.length - 3}</span>
-                            </div>
-                          )}
-                        </div>
-                        <span style={{
-                          fontSize: '14px',
-                          color: '#111827'
-                        }}>{getTotalItems(order.items)} items</span>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#111827'
-                      }}>
-                        {formatCurrency(order.totalAmount)}
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        gap: '4px',
-                        ...getStatusColor(order.orderStatus)
-                      }}>
-                        {getStatusIcon(order.orderStatus)}
-                        <span>{order.orderStatus}</span>
-                      </span>
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap',
-                      fontSize: '14px',
-                      color: '#6b7280'
-                    }}>
-                      {formatDate(order.orderDate)}
-                    </td>
-                    <td style={{
-                      padding: '16px 24px',
-                      whiteSpace: 'nowrap',
-                      fontSize: '14px',
-                      fontWeight: '500'
-                    }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowModal(true);
-                          }}
-                          style={{
-                            color: '#2563eb',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px'
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = '#f3f4f6'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                        >
-                          <Eye style={{ width: '16px', height: '16px' }} />
-                        </button>
-                        <select
-                          value={order.orderStatus}
-                          onChange={(e) => handleTableStatusChange(order, e.target.value)}
-                          style={{
-                            fontSize: '12px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            padding: '4px 8px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                          }}
-                          onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-                          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Confirmed">Confirmed</option>
-                          <option value="Processing">Processing</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+            <tbody style={{ backgroundColor: 'white' }}>
+  {filteredOrders
+    .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)) // Sort by newest first
+    .map((order) => (
+      <tr key={order._id} style={{
+        borderTop: '1px solid #e5e7eb'
+      }}>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap'
+        }}>
+          <div>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#111827'
+            }}>{order.orderId}</div>
+            <div style={{
+              fontSize: '14px',
+              color: '#6b7280'
+            }}>{order.paymentMethod}</div>
+          </div>
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap'
+        }}>
+          <div>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#111827'
+            }}>{order.userName}</div>
+            <div style={{
+              fontSize: '14px',
+              color: '#6b7280'
+            }}>{order.userPhone}</div>
+            <div style={{
+              fontSize: '14px',
+              color: '#6b7280'
+            }}>{order.location}</div>
+          </div>
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex',
+              marginRight: '5px'
+            }}>
+              {order.items && order.items.slice(0, 3).map((item, idx) => (
+                <img
+                  key={idx}
+                  style={{
+                    width: '9vw',
+                    height: '2vw',
+                    borderRadius: '50%',
+                    border: '1px solid white',
+                    objectFit: 'cover',
+                    marginLeft: idx > 0 ? '-8px' : '0'
+                  }}
+                  src={item.images[0]}
+                />
+              ))}
+              {order.items && order.items.length > 3 && (
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: '#e5e7eb',
+                  border: '2px solid white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: '-8px'
+                }}>
+                  <span style={{
+                    fontSize: '12px',
+                    color: '#6b7280'
+                  }}>+{order.items.length - 3}</span>
+                </div>
+              )}
+            </div>
+            <span style={{
+              fontSize: '14px',
+              color: '#111827'
+            }}>{getTotalItems(order.items)} items</span>
+          </div>
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap'
+        }}>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#111827'
+          }}>
+            {formatCurrency(order.totalAmount)}
+          </div>
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap'
+        }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '500',
+            gap: '4px',
+            ...getStatusColor(order.orderStatus)
+          }}>
+            {getStatusIcon(order.orderStatus)}
+            <span>{order.orderStatus}</span>
+          </span>
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap',
+          fontSize: '14px',
+          color: '#6b7280'
+        }}>
+          {formatDate(order.orderDate)}
+        </td>
+        <td style={{
+          padding: '16px 24px',
+          whiteSpace: 'nowrap',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => {
+                setSelectedOrder(order);
+                setShowModal(true);
+              }}
+              style={{
+                color: '#2563eb',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '4px'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              <Eye style={{ width: '16px', height: '16px' }} />
+            </button>
+            <select
+              value={order.orderStatus}
+              onChange={(e) => handleTableStatusChange(order, e.target.value)}
+              style={{
+                fontSize: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+        </td>
+      </tr>
+    ))}
+</tbody>
             </table>
           </div>
           
@@ -1052,11 +1054,12 @@ const Order1 = () => {
           <div style={{
             position: 'fixed',
             inset: 0,
+            marginLeft:"14vh",
             backgroundColor: 'rgba(107, 114, 128, 0.5)',
             overflowY: 'auto',
             height: '100%',
             width: '100%',
-            zIndex: 50
+            zIndex: 50,
           }}>
             <div style={{
               position: 'relative',
@@ -1073,6 +1076,7 @@ const Order1 = () => {
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
+                paddingLeft:"14vw",
                 alignItems: 'center',
                 marginBottom: '16px'
               }}>
