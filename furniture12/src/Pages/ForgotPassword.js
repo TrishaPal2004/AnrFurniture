@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 
@@ -45,7 +45,7 @@ const handleSendOTP = async (e) => {
 
   try {
     setIsLoading(true);
-    toast.loading('Sending OTP...', { id: 'otp' });
+    // toast.loading('Sending OTP...', { id: 'otp' });
 
     const response = await fetch("https://anrfurniture-2.onrender.com/api/user/forgot-password-email", {
       method: "POST",
@@ -80,7 +80,7 @@ const handleVerifyOTP = async (e) => {
 
   try {
     setIsLoading(true);
-    toast.loading('Verifying OTP...', { id: 'verify' });
+    // toast.loading('Verifying OTP...', { id: 'verify' });
 
     const response = await fetch('https://anrfurniture-2.onrender.com/api/user/verify-otp-email', {
       method: 'POST',
@@ -127,7 +127,7 @@ const handleVerifyOTP = async (e) => {
 
     try {
       setIsLoading(true);
-      toast.loading('Resetting password...', { id: 'reset' });
+      // toast.loading('Resetting password...', { id: 'reset' });
 
       // Here you would typically make an API call to your backend to reset the password
       // For demo purposes, we'll simulate the API call
